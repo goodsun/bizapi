@@ -1,0 +1,13 @@
+{
+  "name": "sync",
+  "description": "sync member list (admin only)",
+  "type": 1,
+  "options": [
+    {
+      "name": "str",
+      "type": 3,
+      "required": false,
+      "description": "sync type (notion|dynamo)"
+    }
+  ]
+}
