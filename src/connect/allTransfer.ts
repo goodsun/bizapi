@@ -37,22 +37,26 @@ export const getAllTransfer = (ca: string, Address: string) => {
       },
     ];
 
-    const rpc_url = CONST.RPCURL;
+    const rpc_url = CONST.RPC_URL;
     const provider = new ethers.JsonRpcProvider(rpc_url);
 
+    console.log("2 contract:" + ca);
     // ② 　Contract インスタンスを作成する。
     const token = new ethers.Contract(ca as string, Abi, provider);
 
+    console.log("3 送信イベント:" + holderAddress);
     // ③ 調べたいホルダーのウォレットの過去のtokenIdの送信イベントログすべて取得する。
     const sentLogs = await token.queryFilter(
       token.filters.Transfer(holderAddress, null)
     );
 
+    console.log("4 受診イベント:" + holderAddress);
     // ④ 調べたいホルダーのウォレットの過去のtokenIdの受信イベントログすべて取得する。
     const receivedLogs = await token.queryFilter(
       token.filters.Transfer(null, holderAddress)
     );
 
+    console.log("5");
     // ⑤ ③と④のログを結合し、EventLogを時間が古いものから順に時系列で並べる。
     const logs = sentLogs
       .concat(receivedLogs)
@@ -66,6 +70,8 @@ export const getAllTransfer = (ca: string, Address: string) => {
     const owned = new Set<number>();
 
     for (const log of logs) {
+      console.dir(log);
+      /*
       if (log.args) {
         const { from, to, tokenId } = log.args;
 
@@ -75,6 +81,7 @@ export const getAllTransfer = (ca: string, Address: string) => {
           owned.delete(Number(tokenId));
         }
       }
+      */
     }
 
     // ⑦ Setをarrayに戻して返却

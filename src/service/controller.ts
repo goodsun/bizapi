@@ -44,6 +44,7 @@ const dynamoUpdate = async () => {
 
 const getTokenInfo = async (req) => {
   const result = await ethreiumService.getTokenInfo(req);
+  console.dir(result);
   return result;
 };
 

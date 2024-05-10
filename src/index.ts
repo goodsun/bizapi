@@ -44,12 +44,17 @@ app.get("/member/:id", async (req, res) => {
   res.send(result + detail);
 });
 
-app.get("/gettoken/:ca/:id", async (req, res) => {
+app.get("/gettoken/:method/:ca", async (req, res) => {
   let result = "<h1>Get Token</h1>";
   const detail = await controller.getTokenInfo(req);
   result = result + "<p>CA:" + req.params.ca + "</p>";
-  result = result + "<p>ID:" + req.params.id + "</p>";
+  result = result + "<p>MD:" + req.params.method + "</p>";
   res.send(result + detail);
+});
+
+app.get("/gettoken/:method/:ca/:id", async (req, res) => {
+  const detail = await controller.getTokenInfo(req);
+  res.send(detail);
 });
 
 app.post(
