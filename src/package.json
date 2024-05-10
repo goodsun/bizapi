@@ -27,6 +27,7 @@
     "@vendia/serverless-express": "^4.12.6",
     "discord-interactions": "^3.4.0",
     "dotenv": "^16.4.5",
+    "ethers": "^6.12.1",
     "express": "^4.19.2"
   }
 }
