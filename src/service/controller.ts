@@ -1,5 +1,6 @@
 import { CONST } from "../common/const.js";
 import sqsService from "../service/sqs.js";
+import ethreiumService from "../service/etherium.js";
 import discordService from "../service/discord.js";
 import notionService from "../service/notion.js";
 import memberModel from "../model/members.js";
@@ -41,6 +42,11 @@ const dynamoUpdate = async () => {
   await memberModel.memberListUpdate(discordList, dynamoList);
 };
 
+const getTokenInfo = async (req) => {
+  const result = await ethreiumService.getTokenInfo(req);
+  return result;
+};
+
 const controller = {
   discordList,
   dynamoList,
@@ -48,6 +54,7 @@ const controller = {
   dynamoUpdate,
   notionUpdate,
   sqsSend,
+  getTokenInfo,
 };
 
 export default controller;

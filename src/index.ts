@@ -44,6 +44,14 @@ app.get("/member/:id", async (req, res) => {
   res.send(result + detail);
 });
 
+app.get("/gettoken/:ca/:id", async (req, res) => {
+  let result = "<h1>Get Token</h1>";
+  const detail = await controller.getTokenInfo(req);
+  result = result + "<p>CA:" + req.params.ca + "</p>";
+  result = result + "<p>ID:" + req.params.id + "</p>";
+  res.send(result + detail);
+});
+
 app.post(
   "/interactions",
   verifyKeyMiddleware(CONST.DISCORD_PUB_KEY),
