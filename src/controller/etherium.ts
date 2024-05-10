@@ -1,5 +1,6 @@
 import { CONST } from "../common/const.js";
 import { getToken } from "../connect/getToken.js";
+import { getTba } from "../connect/getTba.js";
 import { manager } from "../connect/manager.js";
 //import { getAllTransfer } from "../connect/allTransfer.js";
 
@@ -10,8 +11,6 @@ const getTokenInfo = async (res) => {
   if (res.params.id) {
     id = res.params.id;
   }
-  console.log("PARAMATOR CA:" + ca + "METHOD:" + method);
-  console.log("UseChain" + CONST.RPC_URL);
   const result = await getToken(ca, method, id);
   return result;
 };
@@ -21,10 +20,21 @@ const getManager = async (res) => {
   const result = await manager(method);
   return result;
 };
+const getTbaInfo = async (res) => {
+  const cid = res.params.cid;
+  const regca = res.params.rca;
+  const accca = res.params.aca;
+  const ca = res.params.ca;
+  const id = res.params.id;
+  const salt = res.params.salt;
+  const result = await getTba(regca, accca, cid, ca, id, salt);
+  return result;
+};
 
 const ethController = {
   getTokenInfo,
   getManager,
+  getTbaInfo,
 };
 
 export default ethController;

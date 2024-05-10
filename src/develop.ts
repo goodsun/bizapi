@@ -1,4 +1,4 @@
-import controller from "./service/controller.js";
+import controller from "./controller/controller.js";
 import { Message } from "./types/message";
 
 const message: Message = {

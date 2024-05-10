@@ -20,6 +20,7 @@ export const CONST = {
 
   RPC_URL: process.env.RPC_URL,
   MANAGER_CA: process.env.MANAGER_CA,
+  TBA_REGIST_CA: process.env.TBA_REGIST_CA,
 
   RETRY_WAIT: 500,
   RETRY_LIMIT: 2,
