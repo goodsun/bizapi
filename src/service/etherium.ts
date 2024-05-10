@@ -1,5 +1,6 @@
 import { CONST } from "../common/const.js";
 import { getToken } from "../connect/getToken.js";
+import { manager } from "../connect/manager.js";
 //import { getAllTransfer } from "../connect/allTransfer.js";
 
 const getTokenInfo = async (res) => {
@@ -15,8 +16,15 @@ const getTokenInfo = async (res) => {
   return result;
 };
 
-const controller = {
-  getTokenInfo,
+const getManager = async (res) => {
+  const method = res.params.method;
+  const result = await manager(method);
+  return result;
 };
 
-export default controller;
+const ethController = {
+  getTokenInfo,
+  getManager,
+};
+
+export default ethController;

@@ -1,6 +1,7 @@
 import { CONST } from "./common/const.js";
 import { configure } from "@vendia/serverless-express";
 import controller from "./service/controller.js";
+import ethController from "./service/etherium.js";
 import memberModel from "./model/members.js";
 import express from "express";
 import {
@@ -46,14 +47,19 @@ app.get("/member/:id", async (req, res) => {
 
 app.get("/gettoken/:method/:ca", async (req, res) => {
   let result = "<h1>Get Token</h1>";
-  const detail = await controller.getTokenInfo(req);
+  const detail = await ethController.getTokenInfo(req);
   result = result + "<p>CA:" + req.params.ca + "</p>";
   result = result + "<p>MD:" + req.params.method + "</p>";
   res.send(result + detail);
 });
 
 app.get("/gettoken/:method/:ca/:id", async (req, res) => {
-  const detail = await controller.getTokenInfo(req);
+  const detail = await ethController.getTokenInfo(req);
+  res.send(detail);
+});
+
+app.get("/manager/:method", async (req, res) => {
+  const detail = await ethController.getManager(req);
   res.send(detail);
 });
 

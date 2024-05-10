@@ -4,7 +4,6 @@ dotenv.config();
 export const CONST = {
   API_ENV: process.env.API_ENV,
   API_URL: process.env.API_URL,
-  RPC_URL: process.env.RPC_URL,
   PROVIDER_URL: process.env.PROVIDER_URL,
   SQS_QUEUE_URL: process.env.SQS_QUEUE_URL,
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
@@ -18,6 +17,9 @@ export const CONST = {
   DYNAMO_MEMBER_TABLENAME: process.env.DYNAMO_MEMBER_TABLENAME,
   DYNAMO_SOFT_DELETE: process.env.DYNAMO_SOFT_DELETE,
   DYNAMO_WRITE_WAIT_TIME: 200,
+
+  RPC_URL: process.env.RPC_URL,
+  MANAGER_CA: process.env.MANAGER_CA,
 
   RETRY_WAIT: 500,
   RETRY_LIMIT: 2,
