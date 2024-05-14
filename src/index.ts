@@ -68,6 +68,15 @@ app.get("/tba/:cid/:rca/:aca/:ca/:id/:salt", async (req, res) => {
   res.send(detail);
 });
 
+app.get("/own/:eoa/:ca", async (req, res) => {
+  const list = await ethController.getOwnInfo(req);
+  let result = "";
+  for (let key in list) {
+    result += list[key].tokenURI + "<br />";
+  }
+  res.send(result);
+});
+
 app.post(
   "/interactions",
   verifyKeyMiddleware(CONST.DISCORD_PUB_KEY),

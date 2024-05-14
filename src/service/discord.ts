@@ -1,6 +1,5 @@
 import { CONST } from "../common/const.js";
 import { setTimeout } from "timers/promises";
-import memberModel from "../model/members.js";
 const guild_id = CONST.DISCORD_GUILD_ID;
 const bot_key = CONST.DISCORD_BOT_KEY;
 let json = [];
