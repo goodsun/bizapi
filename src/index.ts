@@ -17,7 +17,7 @@ if (CONST.API_ENV == undefined) {
 const app = express();
 
 app.get("/", async (_, res) => {
-  const result = "<h1>BIZBOT</h1>";
+  const result = "<h1>BIZBOT API ver." + CONST.VERSION + "</h1>";
   res.send(result);
 });
 
