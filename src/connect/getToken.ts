@@ -13,6 +13,9 @@ export const getToken = async (
   const provider = new ethers.JsonRpcProvider(rpc_url);
   const contract = new ethers.Contract(contractAddress, abi, provider);
 
+  console.log("getToken CA: " + contractAddress);
+  console.log("method : " + method);
+  console.log("id : " + id);
   try {
     if (method == "getInfo") {
       const result = await contract.getInfo().then((response) => {
@@ -46,6 +49,11 @@ export const getToken = async (
       return await fetchData(result);
     } else if (method == "balanceOf") {
       const result = await contract.balanceOf(id).then((response) => {
+        return response;
+      });
+      return result;
+    } else if (method == "sic") {
+      const result = await contract.supportsInterface(id).then((response) => {
         return response;
       });
       return result;

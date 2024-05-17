@@ -45,17 +45,21 @@ app.get("/member/:id", async (req, res) => {
   res.send(result + detail);
 });
 
-app.get("/gettoken/:method/:ca", async (req, res) => {
+app.get("/token/:method/:ca", async (req, res) => {
   let result = "<h1>Get Token</h1>";
   const detail = await ethController.getTokenInfo(req);
   result = result + "<p>CA:" + req.params.ca + "</p>";
-  result = result + "<p>MD:" + req.params.method + "</p>";
+  result = result + "<p>method:" + req.params.method + "</p>";
   res.send(result + detail);
 });
 
-app.get("/gettoken/:method/:ca/:id", async (req, res) => {
+app.get("/token/:method/:ca/:id", async (req, res) => {
   const detail = await ethController.getTokenInfo(req);
-  res.send(detail);
+  let result = "<h1>Get Token</h1>";
+  result = result + "<p>CA:" + req.params.ca + "</p>";
+  result = result + "<p>ID:" + req.params.ca + "</p>";
+  result = result + "<p>method:" + req.params.method + "</p>";
+  res.send(result + JSON.stringify(detail));
 });
 
 app.get("/manager/:method", async (req, res) => {
@@ -157,7 +161,7 @@ app.post(
               returnmes = "メンバーをdynamoに連携しました。";
               break;
             default:
-              returnmes = "指定タイプが不明です";
+              returnmes = "指定タイプが不明です:" + synctype;
           }
           console.log(returnmes);
           res.send({
