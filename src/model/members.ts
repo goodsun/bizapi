@@ -1,7 +1,67 @@
 import { CRUD } from "../types/crud.js";
 import { CONST } from "../common/const.js";
+import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
 const TableName = CONST.DYNAMO_MEMBER_TABLENAME;
+
+const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
+  const member = await getMember(id);
+  let params = CRUD.update;
+  params.TableName = TableName;
+  params.Key.DiscordId.N = member.DiscordId.N;
+  params.UpdateExpression =
+    "SET Secret = :secret, Expired = :expired, TmpEoa = :tmpEoa, Updated = :updated";
+  params.ExpressionAttributeValues = {
+    ":secret": { S: secret } as object,
+    ":tmpEoa": { S: tmpEoa } as object,
+    ":updated": { S: new Date(new Date().getTime()) } as object,
+    ":expired": {
+      S: new Date(new Date().getTime() + 10 * 60 * 1000),
+    } as object,
+  };
+  await dynamoService.updateItem(params);
+
+  const detail =
+    "dynamo あいことば登録 " +
+    id +
+    // member.DiscordId.N +
+    " name:" +
+    //member.Name.S +
+    " あいことば：" +
+    secret;
+  return detail;
+};
+
+const memberSetEoa = async (id: String, eoa: String, secret: String) => {
+  try {
+    const member = await getMember(id);
+    const expired = utils.str2unixtime(member.Expired.S);
+    const now = utils.str2unixtime(new Date().getTime());
+    let result = "取得後結果確認";
+    if (
+      utils.isAddressesEqual(member.TmpEoa.S, String(eoa)) &&
+      member.Secret.S == secret &&
+      now < expired
+    ) {
+      let params = CRUD.update;
+      params.TableName = TableName;
+      params.Key.DiscordId.N = member.DiscordId.N;
+      params.UpdateExpression = "SET Eoa = :newVal, Updated = :updated";
+      params.ExpressionAttributeValues = {
+        ":newVal": { S: eoa } as object,
+        ":updated": { S: new Date(new Date().getTime()) } as object,
+      };
+      await dynamoService.updateItem(params);
+      result += "承認通過";
+    } else {
+      result += "承認NG";
+    }
+
+    return result;
+  } catch (error) {
+    return "Error";
+  }
+};
 
 const getMemberList = async () => {
   let params = CRUD.query;
@@ -14,15 +74,15 @@ const getAllList = async () => {
   return await dynamoService.getAllItems(TableName);
 };
 
-const getMember = async (req) => {
+const getMember = async (id) => {
   let params = CRUD.read;
   params.TableName = TableName;
-  params.Key.DiscordId.N = req.params.id;
+  params.Key.DiscordId.N = id;
   return await dynamoService.getItem(params);
 };
 
 const getDisplayMember = async (req) => {
-  const member = await getMember(req);
+  const member = await getMember(req.params.id);
   let result = "<div>";
   if (member != undefined) {
     result = result + "<img src='" + member.Icon.S + "' />";
@@ -31,7 +91,10 @@ const getDisplayMember = async (req) => {
     result = result + "<br /> roles : " + member.Roles.SS;
     result = result + "<br /> join : " + member.Join.S;
     result = result + "<br /> exit : " + member.DeleteFlag.BOOL;
-    result = result + "<br /> update : " + member.Update.S;
+    result = result + "<br /> update : " + member.Updated.S;
+    if (member.Eoa) {
+      result = result + "<br /> eoa : " + member.Eoa.S;
+    }
   }
   result = result + "</div>";
   return result;
@@ -114,9 +177,10 @@ const memberSoftDelete = async (member) => {
   let params = CRUD.update;
   params.TableName = TableName;
   params.Key.DiscordId.N = member.DiscordId.N;
-  params.UpdateExpression = "SET DeleteFlag = :newVal";
+  params.UpdateExpression = "SET DeleteFlag = :newVal, Updated = :updated";
   params.ExpressionAttributeValues = {
     ":newVal": { BOOL: true } as object,
+    ":updated": { S: new Date(new Date().getTime()) } as object,
   };
   await dynamoService.updateItem(params);
 };
@@ -182,5 +246,7 @@ const memberModel = {
   memberListUpdate,
   getDisplayData,
   getDisplayMember,
+  memberSetSecret,
+  memberSetEoa,
 };
 export default memberModel;

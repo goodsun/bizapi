@@ -10,7 +10,7 @@ https://www.notion.so/ja-jp
 
 ```
 カラム名:user 種類: ユーザー
-カラム名:id 種類: 数値
+カラム名:id 種類: テキスト
 カラム名:name 種類: タイトル
 カラム名:roles 種類: マルチセレクト
 カラム名:icon 種類: ファイル＆メディア
@@ -79,7 +79,6 @@ DISCORD_GUILD_ID=[discordのguildID]
 NOTION_API_KEY=[インテグレーションのシークレット]
 NOTION_DATABASE_ID=[notionで作ったデータベース名]
 ```
-
 
 ### customSettings.js ファイルを作成
 

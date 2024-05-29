@@ -34,6 +34,5 @@ curl -X GET -H "Authorization: Bot ${BOT_TOKEN}" \
 ```
 curl -X DELETE -H "Authorization: Bot ${BOT_TOKEN}" \
     https://discord.com/api/v10/applications/${BOT_APP_ID}/commands/${COMMAND_ID}
-:w
 
 ```

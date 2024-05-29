@@ -27,7 +27,7 @@ export const CRUD = {
       Roles: { SS: ["none"] },
       Join: { S: new Date() },
       DeleteFlag: { BOOL: "false" },
-      Update: { S: new Date() },
+      Updated: { S: new Date() },
     },
   },
   read: {
@@ -44,9 +44,7 @@ export const CRUD = {
       DiscordId: { N: "0" },
     },
     UpdateExpression: "SET Icon = :newVal",
-    ExpressionAttributeValues: {
-      ":newVal": { S: CONST.DISCORD_DUMMY_ICON } as object,
-    },
+    ExpressionAttributeValues: {},
   },
   delete: {
     TableName: TableName,

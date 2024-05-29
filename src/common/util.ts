@@ -25,15 +25,34 @@ export const fetchData = async (Url) => {
   }
 };
 
+function generateRandomString(length) {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 // アドレスが同値かどうかを判定する関数
 export const isAddressesEqual = (address1: string, address2: string) => {
   return address1.toLowerCase() === address2.toLowerCase();
+};
+
+const str2unixtime = (dateString) => {
+  const date = new Date(dateString);
+  const unixTime = Math.floor(date.getTime() / 1000);
+  return unixTime;
 };
 
 const utils = {
   sleep,
   fetchData,
   isAddressesEqual,
+  generateRandomString,
+  str2unixtime,
 };
 
 export default utils;

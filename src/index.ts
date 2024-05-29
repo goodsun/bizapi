@@ -1,7 +1,9 @@
 import { CONST } from "./common/const.js";
+import utils from "./common/util.js";
 import { configure } from "@vendia/serverless-express";
 import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
+import getDonate from "./connect/getDonate.js";
 import memberModel from "./model/members.js";
 import express from "express";
 import {
@@ -15,6 +17,21 @@ if (CONST.API_ENV == undefined) {
   process.exit(1);
 }
 const app = express();
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use(express.json());
 
 app.get("/", async (_, res) => {
   const result = "<h1>BIZBOT API ver." + CONST.VERSION + "</h1>";
@@ -37,6 +54,16 @@ app.get("/dynamo", async (_, res) => {
   const result = "<h1>dynamoList</h1>";
   const list = await controller.dynamoList();
   res.send(result + list);
+});
+
+app.get("/member/:id/setTmpEoa/:eoa/:secret", async (req, res) => {
+  const result = "<h1>dynamoList</h1>";
+  const detail = await memberModel.memberSetEoa(
+    String(req.params.id),
+    String(req.params.eoa),
+    String(req.params.secret)
+  );
+  res.send(result + detail);
 });
 
 app.get("/member/:id", async (req, res) => {
@@ -65,6 +92,30 @@ app.get("/token/:method/:ca/:id", async (req, res) => {
 app.get("/manager/:method", async (req, res) => {
   const detail = await ethController.getManager(req);
   res.send(detail);
+});
+
+app.get("/regist/:eoa", async (req, res) => {
+  const eoa = req.params.eoa;
+  const isEOA = await getDonate.isEOA(eoa);
+  let detail = eoa + " | ";
+  if (isEOA) {
+    detail += "このEOAは有効です";
+  } else {
+    detail += "このEOAは無効です";
+  }
+  res.send(detail);
+});
+
+app.post("/regist", async (req, res) => {
+  const message = "REGISTERD";
+  const body = req.body;
+  const result = await memberModel.memberSetEoa(
+    body.discordId,
+    body.eoa,
+    body.secret
+  );
+
+  res.send({ result: result, body: body, message: message });
 });
 
 app.get("/tba/:cid/:rca/:aca/:ca/:id/:salt", async (req, res) => {
@@ -112,8 +163,78 @@ app.post(
               "\n value :" +
               JSON.stringify(message.data.options) +
               "\n",
+            flags: 64,
           },
         });
+      }
+
+      if (message.data.name === "secret") {
+        const secret = "これはひみつだよ";
+        const result = await memberModel.memberSetSecret(
+          message.member.user.id,
+          message.data.options[0].value,
+          secret
+        );
+        console.log(result);
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content:
+              message.member.user.global_name +
+              "\n USERID:" +
+              message.member.user.id +
+              "\n command:" +
+              message.data.name +
+              "\n ひみつのあいことばを設定しました。" +
+              secret,
+            flags: 64,
+          },
+        });
+      }
+
+      if (message.data.name === "regist") {
+        const secret = utils.generateRandomString(12);
+        await memberModel.memberSetSecret(
+          message.member.user.id,
+          message.data.options[0].value,
+          secret
+        );
+        const eoa = message.data.options[0].value;
+        const isEOA = await getDonate.isEOA(eoa);
+        if (isEOA) {
+          const balance = await getDonate.getBalance(eoa);
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content:
+                message.member.user.global_name +
+                "のアカウントを以下のウォレットアドレスに紐づけます \n EOA:" +
+                eoa +
+                "\n balance:" +
+                balance +
+                " matic" +
+                "\n" +
+                "\n<ご注意>:" +
+                "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
+                "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
+                "\n" +
+                "\n以下のURLにアクセスし、「ひみつのあいことば」を入力して登録を完了してください。" +
+                "\nURL: https://dao.goodsun.tokyo/regist/" +
+                message.member.user.id +
+                "\n ひみつの合言葉:" +
+                secret,
+              flags: 64,
+            },
+          });
+        } else {
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: "こちらのアドレスはEOAではありません。 \n EOA:" + eoa,
+              flags: 64,
+            },
+          });
+        }
       }
 
       if (message.data.name === "tool") {
@@ -130,6 +251,7 @@ app.post(
               "\n value :" +
               JSON.stringify(message.data.options) +
               "\n",
+            flags: 64,
           },
         });
       }
@@ -166,12 +288,12 @@ app.post(
           console.log(returnmes);
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: returnmes },
+            data: { content: returnmes, flags: 64 },
           });
         } else {
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: "syncの権限がありません。" },
+            data: { content: "syncの権限がありません。", flags: 64 },
           });
         }
       }
