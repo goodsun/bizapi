@@ -5,13 +5,16 @@ const bot_key = CONST.DISCORD_BOT_KEY;
 let json = [];
 let mode = "get";
 let roles = CONST.roles;
+let roleIds = CONST.roles;
 
 async function loadCustomConstants() {
   try {
     const { CUSTOM_SETTINGS } = await import("../common/customSettings.js");
     roles = CUSTOM_SETTINGS.roles;
+    roleIds = CUSTOM_SETTINGS.roleIds;
   } catch (error) {
     roles = CONST.roles;
+    roleIds = CONST.roleIds;
   }
 }
 

@@ -27,6 +27,7 @@ export const CONST = {
   RETRY_WAIT: 500,
   RETRY_LIMIT: 2,
   roles: {},
+  roleIds: {},
 
   // 暫定表示
   CONTENTS: {

@@ -6,4 +6,9 @@ export const CUSTOM_SETTINGS = {
     "1000000000000000002": "CommunityManager",
     "1000000000000000003": "Supporter",
   },
+  roleIds: {
+    ADMINS: "1000000000000000001",
+    MEMBER: "1000000000000000002",
+    SUPPORTER: "100000000000000003",
+  },
 };

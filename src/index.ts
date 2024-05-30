@@ -11,6 +11,27 @@ import {
   InteractionType,
   InteractionResponseType,
 } from "discord-interactions";
+import { Client, GatewayIntentBits } from "discord.js";
+let ROLE_IDS: any = {};
+
+async function loadCustomConstants() {
+  try {
+    const { CUSTOM_SETTINGS } = await import("./common/customSettings.js");
+    ROLE_IDS = CUSTOM_SETTINGS.roleIds;
+  } catch (error) {
+    ROLE_IDS = CONST.roleIds;
+  }
+}
+loadCustomConstants();
+
+const TOKEN = CONST.DISCORD_BOT_KEY;
+const GUILD_ID = CONST.DISCORD_GUILD_ID;
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+});
+
+client.login(TOKEN);
 
 if (CONST.API_ENV == undefined) {
   console.log("SETTING ERROR");
@@ -106,6 +127,10 @@ app.get("/regist/:eoa", async (req, res) => {
   res.send(detail);
 });
 
+app.get("/roletest/", async (req, res) => {
+  res.send({ result: "is my job", roles: ROLE_IDS });
+});
+
 app.post("/regist", async (req, res) => {
   const message = "REGISTERD";
   const body = req.body;
@@ -142,12 +167,26 @@ app.post(
 
       //=============================================================
       if (message.data.name === "gm") {
-        res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            content: message.member.user.global_name + "さん。gm!\n",
-          },
-        });
+        try {
+          const guild = await client.guilds.fetch(GUILD_ID);
+          const member = await guild.members.fetch(message.member.user.id);
+          await member.roles.add(ROLE_IDS.SUPPORTER);
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: `${message.member.user.global_name}さんGM!\n挨拶のできるあなたをSUPPORTERに任命します!`,
+              flags: 64,
+            },
+          });
+        } catch (error) {
+          console.error("Error adding role:", error);
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: `ロールの付与に失敗しました: ${error.message}`,
+            },
+          });
+        }
       }
 
       if (message.data.name === "work") {
