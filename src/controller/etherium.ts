@@ -2,7 +2,7 @@ import { CONST } from "../common/const.js";
 import { getToken } from "../connect/getToken.js";
 import { getTba } from "../connect/getTba.js";
 import { manager } from "../connect/manager.js";
-import { getOwn } from "../connect/getOwn.js";
+import getOwn from "../connect/getOwn.js";
 
 const getTokenInfo = async (res) => {
   const ca = res.params.ca;
@@ -35,7 +35,7 @@ const getTbaInfo = async (res) => {
 const getOwnInfo = async (res) => {
   const ca = res.params.ca;
   const eoa = res.params.eoa;
-  const result = await getOwn(eoa, ca);
+  const result = await getOwn.getOwn(eoa, ca);
   return result;
 };
 

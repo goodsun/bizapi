@@ -256,6 +256,15 @@ const memberListUpdate = async (discordList, dynamoList) => {
   console.log("add:" + addCnt + " update:" + updateCnt + " del:" + delCnt);
 };
 
+const discordId2eoa = async (discordId) => {
+  const member = await getMember(discordId);
+  if (member) {
+    return member.Eoa.S;
+  } else {
+    return "0x";
+  }
+};
+
 const memberModel = {
   getAllList,
   getMemberList,
@@ -270,5 +279,6 @@ const memberModel = {
   getDisplayMember,
   memberSetSecret,
   memberSetEoa,
+  discordId2eoa,
 };
 export default memberModel;

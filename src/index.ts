@@ -79,8 +79,27 @@ app.get("/dynamo", async (_, res) => {
 });
 
 app.get("/ownlist/:eoa", async (req, res) => {
-  const result = getOwn.getOwnByEoa(req.params.eoa);
-  res.send(result);
+  const ownlist = await getOwn.getOwnByEoa(req.params.eoa);
+  let responseMes = "";
+  if (ownlist.nftList.length > 0) {
+    responseMes += "NFT LIST\n";
+    for (let key in ownlist.nftList) {
+      console.log(ownlist.nftList[key]);
+      responseMes +=
+        ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
+    }
+  }
+
+  if (ownlist.nftList.length > 0) {
+    responseMes += "SBT LIST\n";
+    for (let key in ownlist.nftList) {
+      console.log(ownlist.nftList[key]);
+      responseMes +=
+        ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
+    }
+  }
+
+  res.send({ message: responseMes, list: ownlist });
 });
 
 /*
@@ -97,6 +116,11 @@ app.get("/member/:id/setTmpEoa/:eoa/:secret", async (req, res) => {
 
 app.get("/member/:eoa", async (req, res) => {
   const detail = await memberModel.getMemberByEoa(req.params.eoa);
+  res.send(detail);
+});
+
+app.get("/discord/:id", async (req, res) => {
+  const detail = await memberModel.discordId2eoa(req.params.id);
   res.send(detail);
 });
 
@@ -213,6 +237,10 @@ app.post(
         const isEOA = await getDonate.isEOA(eoa);
         if (isEOA) {
           const balance = await getDonate.getBalance(eoa);
+          let donateBalance = await getDonate.getDonate("balance", eoa);
+          if (donateBalance == undefined) {
+            donateBalance = "0";
+          }
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {
@@ -222,8 +250,9 @@ app.post(
                 eoa +
                 "\n balance:" +
                 balance +
-                " matic" +
-                "\n" +
+                " matic / " +
+                donateBalance +
+                " donatePoint\n" +
                 "\n<ご注意>:" +
                 "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
                 "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
@@ -247,20 +276,52 @@ app.post(
         }
       }
 
-      if (message.data.name === "tool") {
+      if (message.data.name === "apply") {
+        const guild = await client.guilds.fetch(GUILD_ID);
+        const member = await guild.members.fetch(message.member.user.id);
+        const eoa = await memberModel.discordId2eoa(message.member.user.id);
+        const ownlist = await getOwn.getOwnByEoa(eoa);
+        let responseMes = "";
+        let tokenCount = 0;
+
+        if (ownlist.nftList.length > 0) {
+          await member.roles.add(ROLE_IDS.BIZEN_HOLDER);
+          responseMes = responseMes + "NFT LIST\n";
+          for (let key in ownlist.nftList) {
+            tokenCount++;
+            responseMes =
+              responseMes +
+              ownlist.nftList[key][0] +
+              ":" +
+              ownlist.nftList[key][1] +
+              " tokens\n";
+          }
+        }
+
+        if (ownlist.sbtList.length > 0) {
+          await member.roles.add(ROLE_IDS.COMMUNITY_MANAGER);
+          responseMes = responseMes + "SBT LIST\n";
+          for (let key in ownlist.sbtList) {
+            tokenCount++;
+            responseMes =
+              responseMes +
+              ownlist.sbtList[key][0] +
+              ":" +
+              ownlist.sbtList[key][1] +
+              " tokens\n";
+          }
+        }
+
+        if (tokenCount > 0) {
+          responseMes = "あなたの持っているNFT\n" + responseMes;
+        } else {
+          responseMes = "あなたは有効なNFTを持っていません";
+        }
+
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content:
-              message.member.user.global_name +
-              " こちらのコマンドを受付ました。\n" +
-              "\n USERID:" +
-              message.member.user.id +
-              "\n command:" +
-              message.data.name +
-              "\n value :" +
-              JSON.stringify(message.data.options) +
-              "\n",
+            content: responseMes,
             flags: 64,
           },
         });
