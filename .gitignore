@@ -133,5 +133,7 @@ dist
 *.zip
 prd.env
 stg.env
+polygonChain.env
+privateChain.env
 local.env
 customSettings.ts

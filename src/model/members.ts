@@ -2,7 +2,7 @@ import { CRUD } from "../types/crud.js";
 import { CONST } from "../common/const.js";
 import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
-const TableName = CONST.DYNAMO_MEMBER_TABLENAME;
+const TableName = CONST.DYNAMO_TABLE_PREFIX + "_member";
 
 const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
   const member = await getMember(id);
@@ -52,14 +52,14 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
         ":updated": { S: new Date(new Date().getTime()) } as object,
       };
       await dynamoService.updateItem(params);
-      result += "承認通過";
+      result += " 承認OK";
     } else {
-      result += "承認NG";
+      result += " 承認NG";
     }
 
     return result;
   } catch (error) {
-    return "Error";
+    return "エラーが発生しました。";
   }
 };
 
@@ -79,6 +79,35 @@ const getMember = async (id) => {
   params.TableName = TableName;
   params.Key.DiscordId.N = id;
   return await dynamoService.getItem(params);
+};
+
+const getMemberByEoa = async (eoa) => {
+  let params = CRUD.query;
+  params.TableName = TableName;
+  params.KeyConditionExpression = "#PartitionName = :PartitionName";
+  params.FilterExpression = "#DeleteFlag = :DeleteFlag and #Eoa = :Eoa";
+  params.ExpressionAttributeNames = {
+    "#PartitionName": "PartitionName",
+    "#DeleteFlag": "DeleteFlag",
+    "#Eoa": "Eoa",
+  } as object;
+  params.ExpressionAttributeValues = {
+    ":PartitionName": { S: "Users" },
+    ":DeleteFlag": { BOOL: false },
+    ":Eoa": { S: eoa },
+  } as object;
+  const result = await dynamoService.query(params);
+  if (result.Count == 1) {
+    let user = result.Items[0];
+    delete user.TmpEoa;
+    delete user.Secret;
+    console.dir(user);
+    return user;
+  } else if (result.Count == 0) {
+    return { message: "member not found" };
+  } else {
+    return { message: "many member" };
+  }
 };
 
 const getDisplayMember = async (req) => {
@@ -115,7 +144,7 @@ const getDisplayData = async () => {
         result +
         key +
         " | " +
-        'Id: <b><a href="/member/' +
+        'Id: <b><a href="/dynamo/member/' +
         data.DiscordId.N +
         '">' +
         data.DiscordId.N +
@@ -130,7 +159,6 @@ const getDisplayData = async () => {
 };
 
 const memberCreate = async (member) => {
-  console.log("dynamo メンバー登録");
   let params = CRUD.write;
   params.TableName = TableName;
   params.Item.DiscordId.N = String(member.id);
@@ -146,7 +174,6 @@ const memberCreate = async (member) => {
 };
 
 const memberUpdate = async (member) => {
-  console.log("dynamo メンバー更新");
   let params = CRUD.write;
   params.TableName = TableName;
   params.Item.DiscordId.N = String(member.id);
@@ -161,9 +188,6 @@ const memberUpdate = async (member) => {
 };
 
 const memberDelete = async (member) => {
-  console.log(
-    "dynamo メンバー削除 " + member.DiscordId.N + " name:" + member.Name.S
-  );
   let params = CRUD.delete;
   params.TableName = TableName;
   params.Key.DiscordId.N = member.DiscordId.N;
@@ -171,9 +195,6 @@ const memberDelete = async (member) => {
 };
 
 const memberSoftDelete = async (member) => {
-  console.log(
-    "dynamo メンバー退会 " + member.DiscordId.N + " name:" + member.Name.S
-  );
   let params = CRUD.update;
   params.TableName = TableName;
   params.Key.DiscordId.N = member.DiscordId.N;
@@ -239,6 +260,7 @@ const memberModel = {
   getAllList,
   getMemberList,
   getMember,
+  getMemberByEoa,
   memberCreate,
   memberUpdate,
   memberDelete,

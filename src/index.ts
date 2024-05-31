@@ -4,6 +4,7 @@ import { configure } from "@vendia/serverless-express";
 import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
 import getDonate from "./connect/getDonate.js";
+import getOwn from "./connect/getOwn.js";
 import memberModel from "./model/members.js";
 import express from "express";
 import {
@@ -77,6 +78,12 @@ app.get("/dynamo", async (_, res) => {
   res.send(result + list);
 });
 
+app.get("/ownlist/:eoa", async (req, res) => {
+  const result = getOwn.getOwnByEoa(req.params.eoa);
+  res.send(result);
+});
+
+/*
 app.get("/member/:id/setTmpEoa/:eoa/:secret", async (req, res) => {
   const result = "<h1>dynamoList</h1>";
   const detail = await memberModel.memberSetEoa(
@@ -86,8 +93,14 @@ app.get("/member/:id/setTmpEoa/:eoa/:secret", async (req, res) => {
   );
   res.send(result + detail);
 });
+*/
 
-app.get("/member/:id", async (req, res) => {
+app.get("/member/:eoa", async (req, res) => {
+  const detail = await memberModel.getMemberByEoa(req.params.eoa);
+  res.send(detail);
+});
+
+app.get("/dynamo/member/:id", async (req, res) => {
   const result = "<h1>dynamoList</h1>";
   const detail = await memberModel.getDisplayMember(req);
   res.send(result + detail);
@@ -115,24 +128,7 @@ app.get("/manager/:method", async (req, res) => {
   res.send(detail);
 });
 
-app.get("/regist/:eoa", async (req, res) => {
-  const eoa = req.params.eoa;
-  const isEOA = await getDonate.isEOA(eoa);
-  let detail = eoa + " | ";
-  if (isEOA) {
-    detail += "このEOAは有効です";
-  } else {
-    detail += "このEOAは無効です";
-  }
-  res.send(detail);
-});
-
-app.get("/roletest/", async (req, res) => {
-  res.send({ result: "is my job", roles: ROLE_IDS });
-});
-
 app.post("/regist", async (req, res) => {
-  const message = "REGISTERD";
   const body = req.body;
   const result = await memberModel.memberSetEoa(
     body.discordId,
@@ -140,7 +136,7 @@ app.post("/regist", async (req, res) => {
     body.secret
   );
 
-  res.send({ result: result, body: body, message: message });
+  res.send({ message: result });
 });
 
 app.get("/tba/:cid/:rca/:aca/:ca/:id/:salt", async (req, res) => {
@@ -206,31 +202,6 @@ app.post(
           },
         });
       }
-
-      if (message.data.name === "secret") {
-        const secret = "これはひみつだよ";
-        const result = await memberModel.memberSetSecret(
-          message.member.user.id,
-          message.data.options[0].value,
-          secret
-        );
-        console.log(result);
-        res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            content:
-              message.member.user.global_name +
-              "\n USERID:" +
-              message.member.user.id +
-              "\n command:" +
-              message.data.name +
-              "\n ひみつのあいことばを設定しました。" +
-              secret,
-            flags: 64,
-          },
-        });
-      }
-
       if (message.data.name === "regist") {
         const secret = utils.generateRandomString(12);
         await memberModel.memberSetSecret(

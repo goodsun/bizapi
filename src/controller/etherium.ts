@@ -20,6 +20,7 @@ const getManager = async (res) => {
   const result = await manager(method);
   return result;
 };
+
 const getTbaInfo = async (res) => {
   const cid = res.params.cid;
   const regca = res.params.rca;

@@ -13,9 +13,6 @@ export const getToken = async (
   const provider = new ethers.JsonRpcProvider(rpc_url);
   const contract = new ethers.Contract(contractAddress, abi, provider);
 
-  console.log("getToken CA: " + contractAddress);
-  console.log("method : " + method);
-  console.log("id : " + id);
   try {
     if (method == "getInfo") {
       const result = await contract.getInfo().then((response) => {

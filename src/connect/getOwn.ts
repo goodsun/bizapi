@@ -1,5 +1,7 @@
 import { ethers } from "ethers";
 import { CONST } from "../common/const.js";
+import { manager } from "../connect/manager.js";
+import { getToken } from "../connect/getToken.js";
 import utils from "../common/util.js";
 
 const rpc_url = CONST.RPC_URL;
@@ -95,3 +97,29 @@ async function getERC1155Tokens(ownerAddress, contractAddress, tokenIds) {
   }
   return tokens;
 }
+
+export const getOwnByEoa = async (eoa: string) => {
+  const contracts = await manager("contracts");
+  const nftContracts = contracts.filter((subArray) => subArray[2] == "nft");
+  const sbtContracts = contracts.filter((subArray) => subArray[2] == "sbt");
+
+  for (let key in nftContracts) {
+    const result = await getToken(nftContracts[key][0], "balanceOf", eoa);
+    if (result > 0) {
+      console.log("balanceOf " + nftContracts[key][1] + " : " + result);
+    }
+  }
+
+  for (let key in sbtContracts) {
+    const result = await getToken(sbtContracts[key][0], "balanceOf", eoa);
+    if (result > 0) {
+      console.log("balanceOf " + sbtContracts[key][1] + " : " + result);
+    }
+  }
+
+  return eoa + "が持ってるもの";
+};
+
+export default {
+  getOwnByEoa,
+};
