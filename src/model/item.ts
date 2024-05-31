@@ -1,8 +1,8 @@
 import { CONST } from "../common/const.js";
 import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
-const TableName = CONST.DYNAMO_TABLE_PREFIX + "_shop";
-const PartitionName = "Shops";
+const TableName = CONST.DYNAMO_TABLE_PREFIX + "_item";
+const PartitionName = "Items";
 
 const CRUD = {
   create: {
@@ -10,9 +10,7 @@ const CRUD = {
     Item: {
       PartitionName: { S: PartitionName },
       Id: { N: "0" },
-      Name: { S: "GallaryName" },
-      Url: { S: "https://example.com/test.png" },
-      Icon: { S: "https://example.com/test.png" },
+      Token: { S: "contractAddress/#" },
       Info: {},
       DeleteFlag: { BOOL: "false" },
       Created: { S: new Date() },
@@ -116,7 +114,7 @@ const query = async () => {
   return result;
 };
 
-const shopModel = {
+const itemModel = {
   createTable,
   getAllItems,
   getItem,
@@ -125,4 +123,4 @@ const shopModel = {
   softDeleteItem,
   query,
 };
-export default shopModel;
+export default itemModel;

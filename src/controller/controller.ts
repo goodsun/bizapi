@@ -3,11 +3,25 @@ import sqsService from "../service/sqs.js";
 import discordService from "../service/discord.js";
 import notionService from "../service/notion.js";
 import memberModel from "../model/members.js";
+import shopModel from "../model/shop.js";
+import itemModel from "../model/item.js";
 import { Message } from "../types/message.js";
 
 const discordList = async () => {
   const result = await discordService.getDisplayData();
   console.log("Discord test:" + result);
+  return result;
+};
+
+const shopList = async () => {
+  const result = await shopModel.getAllItems();
+  console.log("Dynamo test:" + result);
+  return result;
+};
+
+const itemList = async () => {
+  const result = await itemModel.getAllItems();
+  console.log("Dynamo test:" + result);
   return result;
 };
 
@@ -45,6 +59,8 @@ const controller = {
   discordList,
   dynamoList,
   notionList,
+  itemList,
+  shopList,
   dynamoUpdate,
   notionUpdate,
   sqsSend,

@@ -248,19 +248,19 @@ app.post(
                 message.member.user.global_name +
                 "のアカウントを以下のウォレットアドレスに紐づけます \n EOA:" +
                 eoa +
-                "\n balance:" +
+                "\n" +
                 balance +
-                " matic / " +
+                " matic\n" +
                 donateBalance +
                 " donatePoint\n" +
                 "\n<ご注意>:" +
                 "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
                 "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
                 "\n" +
-                "\n以下のURLにアクセスし、「ひみつのあいことば」を入力して登録を完了してください。" +
+                "\n以下のURLにアクセスし、「SECRET」を入力して登録を完了してください。" +
                 "\nURL: https://dao.goodsun.tokyo/regist/" +
                 message.member.user.id +
-                "\n ひみつの合言葉:" +
+                "\n SECRET:" +
                 secret,
               flags: 64,
             },
