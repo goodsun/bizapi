@@ -1,84 +1,12 @@
 import { CONST } from "../common/const.js";
+import { getCrud } from "./crud/shopcrud.js";
 import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
 const TableName = CONST.DYNAMO_TABLE_PREFIX + "_shop";
 const PartitionName = "Shops";
 
-const CRUD = {
-  create: {
-    TableName: TableName,
-    AttributeDefinitions: [
-      { AttributeName: "PartitionName", AttributeType: "S" },
-      { AttributeName: "Id", AttributeType: "N" },
-    ],
-    KeySchema: [
-      { AttributeName: "PartitionName", KeyType: "HASH" },
-      { AttributeName: "Id", KeyType: "RANGE" },
-    ],
-    ProvisionedThroughput: {
-      ReadCapacityUnits: 5,
-      WriteCapacityUnits: 5,
-    },
-  },
-  write: {
-    TableName: TableName,
-    Item: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-      Eoa: { S: "GallaryName" },
-      Name: { S: "Hino Kawashima" },
-      Imgurl: { S: "https://example.com/test.png" },
-      Type: { N: "1" },
-      Status: { S: "INFO" },
-      Json: {
-        S: '{"en":{"name":"Hino Kawashima","profile":"BizenDAO founder","workplace":"Department of Food and Nutrition professor, Toita Womens Junior College","location":"2-21-17 Shiba, Minato-ku, Tokyo","station":"Toei Subway Mita Line/Asakusa Line Mita Station"},"ja":{"name":"川嶋 比野","profile":"BizenDAO ファウンダー 食器の色と絵柄と美味しさの関係の研究・学会へ研究発表を続け、2019年にそれらの研究結果をまとめ、実践女子大学大学院にて博士(食物栄養学)の学位を取得。","workplace":"戸板女子短期大学 食物栄養学博士 教授","location":"東京都港区芝2-21-17","station":"都営地下鉄三田線・浅草線 三田駅"}}',
-      },
-      DeleteFlag: { BOOL: "false" },
-      Created: { S: new Date() },
-      Updated: { S: new Date() },
-    },
-  },
-  read: {
-    TableName: TableName,
-    Key: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-    },
-  },
-  update: {
-    TableName: TableName,
-    Key: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-    },
-    UpdateExpression: "SET Info = :newVal",
-    ExpressionAttributeValues: {},
-  },
-  delete: {
-    TableName: TableName,
-    Key: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-    },
-  },
-  query: {
-    TableName: TableName,
-    KeyConditionExpression: "#PartitionName = :PartitionName",
-    FilterExpression: "#DeleteFlag = :DeleteFlag",
-    ExpressionAttributeNames: {
-      "#PartitionName": "PartitionName",
-      "#DeleteFlag": "DeleteFlag",
-    } as object,
-    ExpressionAttributeValues: {
-      ":PartitionName": { S: PartitionName },
-      ":DeleteFlag": { BOOL: false },
-    } as object,
-  },
-  scan: { TableName: TableName, Limit: 1000 },
-};
-
 const createTable = async () => {
-  let params = CRUD.create;
+  let params = getCrud().create;
   params.TableName = TableName;
   const result = await dynamoService.createTable(params);
   console.dir(result);
@@ -90,46 +18,47 @@ const getAllItems = async () => {
 };
 
 const getItems = async () => {
-  let params = CRUD.query;
+  let params = getCrud().query;
   params.TableName = TableName;
+  console.dir(params);
   const result = await dynamoService.query(params);
   if (result == undefined) {
     return createTable();
   }
-  return result;
+  return result.Items;
 };
 
 const getItem = async (id) => {
-  let params = CRUD.read;
+  let params = getCrud().read;
   params.TableName = TableName;
   params.Key.Id.N = id;
   return await dynamoService.getItem(params);
 };
 
 const createItem = async (entity) => {
-  let params = CRUD.write;
+  let params = getCrud().write;
   params.TableName = TableName;
   params.Item.Id.N = String(entity.id);
   params.Item.Eoa.S = String(entity.eoa);
   params.Item.Name.S = String(entity.name);
   params.Item.Imgurl.S = String(entity.imgurl);
-  params.Item.Type.N = String(entity.type);
+  params.Item.Type.S = String(entity.type);
+  params.Item.Status.N = String(entity.status);
   params.Item.Json.S = String(entity.json);
   console.dir(params);
   await dynamoService.putItem(params);
 };
 
-const deleteItem = async (entity) => {
-  console.log("entity 削除 " + entity.Id.N + " name:" + entity.Name.S);
-  let params = CRUD.delete;
+const deleteItem = async (id) => {
+  let params = getCrud().delete;
   params.TableName = TableName;
-  params.Key.Id.N = entity.Id.N;
+  params.Key.Id.N = String(id);
   await dynamoService.deleteItem(params);
 };
 
 const updateItem = async (id: String, Column: String, Value: String) => {
   const item = await getItem(id);
-  let params = CRUD.update;
+  let params = getCrud().update;
   params.TableName = TableName;
   params.Key.Id.N = item.Id.N;
   params.UpdateExpression = "SET Info = :info, Updated = :updated";
@@ -140,10 +69,10 @@ const updateItem = async (id: String, Column: String, Value: String) => {
   await dynamoService.updateItem(params);
 };
 
-const softDeleteItem = async (entity) => {
-  let params = CRUD.update;
+const softDeleteItem = async (id) => {
+  let params = getCrud().update;
   params.TableName = TableName;
-  params.Key.Id.N = entity.Id.N;
+  params.Key.Id.N = String(id);
   params.UpdateExpression = "SET DeleteFlag = :newVal, Updated = :updated";
   params.ExpressionAttributeValues = {
     ":newVal": { BOOL: true } as object,
@@ -152,23 +81,55 @@ const softDeleteItem = async (entity) => {
   await dynamoService.updateItem(params);
 };
 
+const getNewId = async () => {
+  const maxid = await dynamoService.getMaxId(TableName, "Id");
+  return maxid + 1;
+};
+
 const query = async () => {
-  let params = CRUD.query;
+  let params = getCrud().query;
   params.TableName = TableName;
   const result = await dynamoService.query(params);
   return result;
 };
 
+const getItemByEoa = async (eoa) => {
+  let params = getCrud().query;
+  params.TableName = TableName;
+  params.KeyConditionExpression = "#PartitionName = :PartitionName";
+  params.FilterExpression = "#DeleteFlag = :DeleteFlag and #Eoa = :Eoa";
+  params.ExpressionAttributeNames = {
+    "#PartitionName": "PartitionName",
+    "#DeleteFlag": "DeleteFlag",
+    "#Eoa": "Eoa",
+  } as object;
+  params.ExpressionAttributeValues = {
+    ":PartitionName": { S: PartitionName },
+    ":DeleteFlag": { BOOL: false },
+    ":Eoa": { S: eoa },
+  } as object;
+  const result = await dynamoService.query(params);
+  if (result.Count == 1) {
+    let item = result.Items[0];
+    return item;
+  } else if (result.Count == 0) {
+    return { message: "Item not found" };
+  } else {
+    return { message: "many Item" };
+  }
+};
+
 const shopModel = {
-  CRUD,
   createTable,
   getAllItems,
   getItems,
   getItem,
+  getNewId,
   createItem,
   updateItem,
   deleteItem,
   softDeleteItem,
+  getItemByEoa,
   query,
 };
 export default shopModel;

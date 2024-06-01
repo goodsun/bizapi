@@ -5,6 +5,7 @@ import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
 import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
+import contentsConnect from "./connect/contents.js";
 import memberModel from "./model/members.js";
 import shopModel from "./model/shops.js";
 import itemModel from "./model/items.js";
@@ -80,25 +81,9 @@ app.get("/dynamo", async (_, res) => {
   res.send(result + list);
 });
 
-app.get("/shop", async (_, res) => {
-  const list = await controller.shopList();
-  res.send(list);
-});
-
 app.get("/item", async (_, res) => {
   const list = await controller.itemList();
   res.send(list);
-});
-
-app.get("/shop/add/:id/:name", async (req, res) => {
-  await shopModel.createItem(req.params);
-  const list = await controller.shopList();
-  res.send(list);
-});
-
-app.post("/shop/:id", async (req, res) => {
-  const body = req.body;
-  const result = await shopModel.createItem(body.id, body.eoa, body.json);
 });
 
 app.get("/item/add/:id/:ca/:num", async (req, res) => {
@@ -106,6 +91,110 @@ app.get("/item/add/:id/:ca/:num", async (req, res) => {
   const list = await controller.itemList();
   res.send(list);
 });
+
+app.get("/shop", async (_, res) => {
+  const response = await controller.shopList();
+  res.send(response);
+});
+
+app.get("/shop/id/:id", async (req, res) => {
+  const response = await shopModel.getItem(req.params.id);
+  res.send(response);
+});
+
+app.get("/shop/eoa/:eoa", async (req, res) => {
+  const response = await shopModel.getItemByEoa(req.params.eoa);
+  res.send(response);
+});
+
+app.post("/shop/add", async (req, res) => {
+  let body = req.body;
+  body.id = await shopModel.getNewId();
+  console.log("post shop add body(+ newid)");
+  console.dir(body);
+  const result = await shopModel.createItem(body);
+  res.send(body);
+});
+
+app.post("/shop/delete", async (req, res) => {
+  const body = req.body;
+  console.log("post shop body");
+  console.dir(body);
+  if (CONST.DYNAMO_SOFT_DELETE == "true") {
+    await shopModel.softDeleteItem(body.id);
+  } else {
+    await shopModel.deleteItem(body.id);
+  }
+  res.send(body);
+});
+
+app.post("/shop/update/:id", async (req, res) => {
+  const body = req.body;
+  body.id = req.params.id;
+  console.dir(body);
+  const result = await shopModel.createItem(body);
+  res.send(result);
+});
+
+/*
+app.get("/shop/add/:id/:name", async (req, res) => {
+  await shopModel.createItem(req.params);
+  const response = await controller.shopList();
+  res.send(response);
+});
+*/
+
+app.get("/item", async (_, res) => {
+  const response = await controller.itemList();
+  res.send(response);
+});
+
+app.get("/item/id/:id", async (req, res) => {
+  const response = await itemModel.getItem(req.params.id);
+  res.send(response);
+});
+
+app.get("/item/eoa/:eoa", async (req, res) => {
+  const response = await itemModel.getItemByEoa(req.params.eoa);
+  res.send(response);
+});
+
+app.post("/item/add", async (req, res) => {
+  let body = req.body;
+  body.id = await itemModel.getNewId();
+  console.log("post item add body(+ newid)");
+  console.dir(body);
+  const result = await itemModel.createItem(body);
+  res.send(body);
+});
+
+app.post("/item/delete", async (req, res) => {
+  const body = req.body;
+  console.log("post item body");
+  console.dir(body);
+  if (CONST.DYNAMO_SOFT_DELETE == "true") {
+    await itemModel.softDeleteItem(body.id);
+  } else {
+    await itemModel.deleteItem(body.id);
+  }
+  res.send(body);
+});
+
+app.post("/item/update/:id", async (req, res) => {
+  const body = req.body;
+  body.id = req.params.id;
+  console.dir(body);
+  const result = await itemModel.createItem(body);
+  res.send(result);
+});
+
+/*
+app.get("/item/add/:id/:name", async (req, res) => {
+  await itemModel.createItem(req.params);
+  const response = await controller.itemList();
+  res.send(response);
+});
+*/
 
 app.get("/ownlist/:eoa", async (req, res) => {
   const ownlist = await getOwn.getOwnByEoa(req.params.eoa);
@@ -204,6 +293,21 @@ app.get("/own/:eoa/:ca", async (req, res) => {
     result += list[key].tokenURI + "<br />";
   }
   res.send(result);
+});
+
+app.get("/contents", async (req, res) => {
+  const detail = await contentsConnect.getContent();
+  res.send(detail);
+});
+
+app.get("/genre", async (req, res) => {
+  const detail = await contentsConnect.getGenre();
+  res.send(detail);
+});
+
+app.get("/type", async (req, res) => {
+  const detail = await contentsConnect.getType();
+  res.send(detail);
 });
 
 app.post(

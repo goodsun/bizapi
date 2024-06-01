@@ -9,9 +9,22 @@ import {
   ScanCommand,
   DescribeTableCommand,
 } from "@aws-sdk/client-dynamodb";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { CONST } from "../common/const.js";
 
 const client = new DynamoDBClient({ region: CONST.DYNAMO_REGION });
+
+const getUnmarshallItems = (results) => {
+  let response = {
+    Count: results.Count,
+    Items: [],
+    ScannedCount: results.ScannedCount,
+  };
+  for (let key in results.Items) {
+    response.Items.push(unmarshall(results.Items[key]));
+  }
+  return response;
+};
 
 const tableExists = async (tableName) => {
   try {
@@ -49,7 +62,7 @@ const putItem = async (params) => {
 const getItem = async (params) => {
   try {
     const result = await client.send(new GetItemCommand(params));
-    return result.Item;
+    return unmarshall(result.Item);
   } catch (err) {
     console.log(err);
   }
@@ -75,8 +88,7 @@ const query = async (params) => {
   console.dir(params);
   try {
     const result = await client.send(new QueryCommand(params));
-    console.dir(result);
-    return result;
+    return getUnmarshallItems(result);
   } catch (err) {
     console.log(err);
   }
@@ -141,6 +153,32 @@ const getDisplayData = async (tableName) => {
   return result;
 };
 
+const getMaxId = async (tableName, idName) => {
+  const params: any = {
+    TableName: tableName,
+    ProjectionExpression: idName, // IDフィールドのみ取得
+  };
+
+  let maxId = null;
+  let items = [];
+  let lastEvaluatedKey = null;
+
+  do {
+    const response = await client.send(new ScanCommand(params));
+    items = items.concat(
+      response.Items.map((item) => unmarshall(item)[idName])
+    );
+    lastEvaluatedKey = response.LastEvaluatedKey;
+    params.ExclusiveStartKey = lastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  if (items.length > 0) {
+    maxId = Math.max(...items);
+  }
+
+  return maxId;
+};
+
 const dynamoService = {
   tableExists,
   createTable,
@@ -152,6 +190,7 @@ const dynamoService = {
   query,
   getAllItems,
   getDisplayData,
+  getMaxId,
 };
 
 export default dynamoService;

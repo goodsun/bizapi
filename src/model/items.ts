@@ -1,79 +1,12 @@
 import { CONST } from "../common/const.js";
+import { getCrud } from "./crud/itemcrud.js";
 import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
 const TableName = CONST.DYNAMO_TABLE_PREFIX + "_item";
 const PartitionName = "Items";
 
-const CRUD = {
-  create: {
-    TableName: TableName,
-    AttributeDefinitions: [
-      { AttributeName: "PartitionName", AttributeType: "S" },
-      { AttributeName: "Id", AttributeType: "N" },
-    ],
-    KeySchema: [
-      { AttributeName: "PartitionName", KeyType: "HASH" },
-      { AttributeName: "Id", KeyType: "RANGE" },
-    ],
-    ProvisionedThroughput: {
-      ReadCapacityUnits: 5,
-      WriteCapacityUnits: 5,
-    },
-  },
-  write: {
-    TableName: TableName,
-    Item: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-      Ca: { S: "contractAddress" },
-      Num: { S: "0" },
-      Info: { S: "INFO" },
-      DeleteFlag: { BOOL: "false" },
-      Created: { S: new Date() },
-      Updated: { S: new Date() },
-    },
-  },
-  read: {
-    TableName: TableName,
-    Key: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-    },
-  },
-  update: {
-    TableName: TableName,
-    Key: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-    },
-    UpdateExpression: "SET Info = :newVal",
-    ExpressionAttributeValues: {},
-  },
-  delete: {
-    TableName: TableName,
-    Key: {
-      PartitionName: { S: PartitionName },
-      Id: { N: "0" },
-    },
-  },
-  query: {
-    TableName: TableName,
-    KeyConditionExpression: "#PartitionName = :PartitionName",
-    FilterExpression: "#DeleteFlag = :DeleteFlag",
-    ExpressionAttributeNames: {
-      "#PartitionName": "PartitionName",
-      "#DeleteFlag": "DeleteFlag",
-    } as object,
-    ExpressionAttributeValues: {
-      ":PartitionName": { S: PartitionName },
-      ":DeleteFlag": { BOOL: false },
-    } as object,
-  },
-  scan: { TableName: TableName, Limit: 1000 },
-};
-
 const createTable = async () => {
-  let params = CRUD.create;
+  let params = getCrud().create;
   params.TableName = TableName;
   const result = await dynamoService.createTable(params);
   console.dir(result);
@@ -85,43 +18,51 @@ const getAllItems = async () => {
 };
 
 const getItems = async () => {
-  let params = CRUD.query;
+  let params = getCrud().query;
   params.TableName = TableName;
+  console.dir(params);
   const result = await dynamoService.query(params);
   if (result == undefined) {
     return createTable();
   }
-  return result;
+  return result.Items;
 };
 
 const getItem = async (id) => {
-  let params = CRUD.read;
+  let params = getCrud().read;
   params.TableName = TableName;
   params.Key.Id.N = id;
   return await dynamoService.getItem(params);
 };
 
 const createItem = async (entity) => {
-  let params = CRUD.write;
+  let params = getCrud().write;
   params.TableName = TableName;
   params.Item.Id.N = String(entity.id);
-  params.Item.Ca.S = String(entity.ca);
-  params.Item.Num.S = String(entity.num);
+  params.Item.Name.S = String(entity.name);
+  params.Item.Contract.S = String(entity.contract);
+  params.Item.TokenId.S = String(entity.tokenid);
+  params.Item.Type.S = String(entity.type);
+  params.Item.Genre.S = String(entity.genre);
+  params.Item.Price.N = String(entity.price);
+  params.Item.Status.N = String(entity.status);
+  params.Item.Json.S = String(entity.json);
+  params.Item.Creator.S = String(entity.creator);
+  params.Item.Link.S = String(entity.link);
   console.dir(params);
   await dynamoService.putItem(params);
 };
 
-const deleteItem = async (entity) => {
-  console.log("entity 削除 " + entity.Id.N + " name:" + entity.Name.S);
-  let params = CRUD.delete;
+const deleteItem = async (id) => {
+  let params = getCrud().delete;
   params.TableName = TableName;
-  params.Key.Id.N = entity.Id.N;
+  params.Key.Id.N = String(id);
   await dynamoService.deleteItem(params);
 };
 
 const updateItem = async (id: String, Column: String, Value: String) => {
   const item = await getItem(id);
-  let params = CRUD.update;
+  let params = getCrud().update;
   params.TableName = TableName;
   params.Key.Id.N = item.Id.N;
   params.UpdateExpression = "SET Info = :info, Updated = :updated";
@@ -132,10 +73,10 @@ const updateItem = async (id: String, Column: String, Value: String) => {
   await dynamoService.updateItem(params);
 };
 
-const softDeleteItem = async (entity) => {
-  let params = CRUD.update;
+const softDeleteItem = async (id) => {
+  let params = getCrud().update;
   params.TableName = TableName;
-  params.Key.Id.N = entity.Id.N;
+  params.Key.Id.N = String(id);
   params.UpdateExpression = "SET DeleteFlag = :newVal, Updated = :updated";
   params.ExpressionAttributeValues = {
     ":newVal": { BOOL: true } as object,
@@ -144,23 +85,48 @@ const softDeleteItem = async (entity) => {
   await dynamoService.updateItem(params);
 };
 
+const getNewId = async () => {
+  const maxid = await dynamoService.getMaxId(TableName, "Id");
+  return maxid + 1;
+};
+
 const query = async () => {
-  let params = CRUD.query;
+  let params = getCrud().query;
   params.TableName = TableName;
   const result = await dynamoService.query(params);
   return result;
 };
 
+const getItemByEoa = async (eoa) => {
+  let params = getCrud().query;
+  params.TableName = TableName;
+  params.KeyConditionExpression = "#PartitionName = :PartitionName";
+  params.FilterExpression = "#DeleteFlag = :DeleteFlag and #Creator = :Creator";
+  params.ExpressionAttributeNames = {
+    "#PartitionName": "PartitionName",
+    "#DeleteFlag": "DeleteFlag",
+    "#Creator": "Creator",
+  } as object;
+  params.ExpressionAttributeValues = {
+    ":PartitionName": { S: PartitionName },
+    ":DeleteFlag": { BOOL: false },
+    ":Creator": { S: eoa },
+  } as object;
+  const result = await dynamoService.query(params);
+  return result.Items;
+};
+
 const itemModel = {
-  CRUD,
   createTable,
   getAllItems,
   getItems,
   getItem,
+  getNewId,
   createItem,
   updateItem,
   deleteItem,
   softDeleteItem,
+  getItemByEoa,
   query,
 };
 export default itemModel;
