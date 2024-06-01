@@ -78,6 +78,18 @@ app.get("/dynamo", async (_, res) => {
   res.send(result + list);
 });
 
+app.get("/shop", async (_, res) => {
+  const result = "<h1>shopList</h1>";
+  const list = await controller.shopList();
+  res.send(result + list);
+});
+
+app.get("/item", async (_, res) => {
+  const result = "<h1>shopList</h1>";
+  const list = await controller.itemList();
+  res.send(result + list);
+});
+
 app.get("/ownlist/:eoa", async (req, res) => {
   const ownlist = await getOwn.getOwnByEoa(req.params.eoa);
   let responseMes = "";
