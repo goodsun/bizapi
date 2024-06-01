@@ -28,7 +28,7 @@ const CRUD = {
       Eoa: { S: "GallaryName" },
       Name: { S: "Hino Kawashima" },
       Imgurl: { S: "https://example.com/test.png" },
-      Type: { S: "https://example.com/test.png" },
+      Type: { N: "1" },
       Status: { S: "INFO" },
       Json: {
         S: '{"en":{"name":"Hino Kawashima","profile":"BizenDAO founder","workplace":"Department of Food and Nutrition professor, Toita Womens Junior College","location":"2-21-17 Shiba, Minato-ku, Tokyo","station":"Toei Subway Mita Line/Asakusa Line Mita Station"},"ja":{"name":"川嶋 比野","profile":"BizenDAO ファウンダー 食器の色と絵柄と美味しさの関係の研究・学会へ研究発表を続け、2019年にそれらの研究結果をまとめ、実践女子大学大学院にて博士(食物栄養学)の学位を取得。","workplace":"戸板女子短期大学 食物栄養学博士 教授","location":"東京都港区芝2-21-17","station":"都営地下鉄三田線・浅草線 三田駅"}}',
@@ -110,7 +110,11 @@ const createItem = async (entity) => {
   let params = CRUD.write;
   params.TableName = TableName;
   params.Item.Id.N = String(entity.id);
+  params.Item.Eoa.S = String(entity.eoa);
   params.Item.Name.S = String(entity.name);
+  params.Item.Imgurl.S = String(entity.imgurl);
+  params.Item.Type.N = String(entity.type);
+  params.Item.Json.S = String(entity.json);
   console.dir(params);
   await dynamoService.putItem(params);
 };

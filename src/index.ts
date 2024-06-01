@@ -96,6 +96,11 @@ app.get("/shop/add/:id/:name", async (req, res) => {
   res.send(list);
 });
 
+app.post("/shop/:id", async (req, res) => {
+  const body = req.body;
+  const result = await shopModel.createItem(body.id, body.eoa, body.json);
+});
+
 app.get("/item/add/:id/:ca/:num", async (req, res) => {
   await itemModel.createItem(req.params);
   const list = await controller.itemList();
