@@ -3,8 +3,8 @@ import sqsService from "../service/sqs.js";
 import discordService from "../service/discord.js";
 import notionService from "../service/notion.js";
 import memberModel from "../model/members.js";
-import shopModel from "../model/shop.js";
-import itemModel from "../model/item.js";
+import shopModel from "../model/shops.js";
+import itemModel from "../model/items.js";
 import { Message } from "../types/message.js";
 
 const discordList = async () => {
@@ -14,21 +14,18 @@ const discordList = async () => {
 };
 
 const shopList = async () => {
-  const result = await shopModel.getAllItems();
-  console.log("Dynamo test:" + result);
+  const result = await shopModel.getItems();
   return result;
 };
 
 const itemList = async () => {
-  const result = await itemModel.getAllItems();
-  console.log("Dynamo test:" + result);
+  const result = await itemModel.getItems();
   return result;
 };
 
 const dynamoList = async () => {
   console.log("DYNAMO SETTING prefix : " + CONST.DYNAMO_TABLE_PREFIX);
   const result = await memberModel.getDisplayData();
-  console.log("Dynamo test:" + result);
   return result;
 };
 

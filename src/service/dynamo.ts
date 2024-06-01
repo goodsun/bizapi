@@ -7,21 +7,38 @@ import {
   DeleteItemCommand,
   QueryCommand,
   ScanCommand,
+  DescribeTableCommand,
 } from "@aws-sdk/client-dynamodb";
 import { CONST } from "../common/const.js";
 
 const client = new DynamoDBClient({ region: CONST.DYNAMO_REGION });
 
+const tableExists = async (tableName) => {
+  try {
+    const command = new DescribeTableCommand({ TableName: tableName });
+    await client.send(command);
+    return true;
+  } catch (error) {
+    if (error.name === "ResourceNotFoundException") {
+      return false;
+    }
+    throw error;
+  }
+};
+
 const createTable = async (params) => {
+  console.dir(params);
   const command = new CreateTableCommand(params);
   try {
     await client.send(command);
   } catch (err) {
-    console.log(err);
+    console.log("createErr");
   }
 };
 
 const putItem = async (params) => {
+  console.log("PUT ITEM TEST ==========");
+  console.dir(params);
   try {
     await client.send(new PutItemCommand(params));
   } catch (err) {
@@ -125,6 +142,7 @@ const getDisplayData = async (tableName) => {
 };
 
 const dynamoService = {
+  tableExists,
   createTable,
   putItem,
   getItem,

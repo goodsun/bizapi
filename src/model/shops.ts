@@ -1,17 +1,34 @@
 import { CONST } from "../common/const.js";
 import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
-const TableName = CONST.DYNAMO_TABLE_PREFIX + "_item";
-const PartitionName = "Items";
+const TableName = CONST.DYNAMO_TABLE_PREFIX + "_shop";
+const PartitionName = "Shops";
 
 const CRUD = {
   create: {
     TableName: TableName,
+    AttributeDefinitions: [
+      { AttributeName: "PartitionName", AttributeType: "S" },
+      { AttributeName: "Id", AttributeType: "N" },
+    ],
+    KeySchema: [
+      { AttributeName: "PartitionName", KeyType: "HASH" },
+      { AttributeName: "Id", KeyType: "RANGE" },
+    ],
+    ProvisionedThroughput: {
+      ReadCapacityUnits: 5,
+      WriteCapacityUnits: 5,
+    },
+  },
+  write: {
+    TableName: TableName,
     Item: {
       PartitionName: { S: PartitionName },
       Id: { N: "0" },
-      Token: { S: "contractAddress/#" },
-      Info: {},
+      Name: { S: "GallaryName" },
+      Url: { S: "https://example.com/test.png" },
+      Icon: { S: "https://example.com/test.png" },
+      Info: { S: "INFO" },
       DeleteFlag: { BOOL: "false" },
       Created: { S: new Date() },
       Updated: { S: new Date() },
@@ -56,15 +73,26 @@ const CRUD = {
   scan: { TableName: TableName, Limit: 1000 },
 };
 
-const createTable = async (entity) => {
+const createTable = async () => {
   let params = CRUD.create;
   params.TableName = TableName;
-  params.Item.Id.N = String(entity.id);
-  await dynamoService.putItem(params);
+  const result = await dynamoService.createTable(params);
+  console.dir(result);
+  return "TABLE CREATE : " + TableName;
 };
 
 const getAllItems = async () => {
   return await dynamoService.getAllItems(TableName);
+};
+
+const getItems = async () => {
+  let params = CRUD.query;
+  params.TableName = TableName;
+  const result = await dynamoService.query(params);
+  if (result == undefined) {
+    return createTable();
+  }
+  return result;
 };
 
 const getItem = async (id) => {
@@ -72,6 +100,15 @@ const getItem = async (id) => {
   params.TableName = TableName;
   params.Key.Id.N = id;
   return await dynamoService.getItem(params);
+};
+
+const createItem = async (entity) => {
+  let params = CRUD.write;
+  params.TableName = TableName;
+  params.Item.Id.N = String(entity.id);
+  params.Item.Name.S = String(entity.name);
+  console.dir(params);
+  await dynamoService.putItem(params);
 };
 
 const deleteItem = async (entity) => {
@@ -114,13 +151,16 @@ const query = async () => {
   return result;
 };
 
-const itemModel = {
+const shopModel = {
+  CRUD,
   createTable,
   getAllItems,
+  getItems,
   getItem,
+  createItem,
   updateItem,
   deleteItem,
   softDeleteItem,
   query,
 };
-export default itemModel;
+export default shopModel;

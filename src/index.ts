@@ -6,6 +6,8 @@ import ethController from "./controller/etherium.js";
 import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
 import memberModel from "./model/members.js";
+import shopModel from "./model/shops.js";
+import itemModel from "./model/items.js";
 import express from "express";
 import {
   verifyKeyMiddleware,
@@ -79,15 +81,25 @@ app.get("/dynamo", async (_, res) => {
 });
 
 app.get("/shop", async (_, res) => {
-  const result = "<h1>shopList</h1>";
   const list = await controller.shopList();
-  res.send(result + list);
+  res.send(list);
 });
 
 app.get("/item", async (_, res) => {
-  const result = "<h1>shopList</h1>";
   const list = await controller.itemList();
-  res.send(result + list);
+  res.send(list);
+});
+
+app.get("/shop/add/:id/:name", async (req, res) => {
+  await shopModel.createItem(req.params);
+  const list = await controller.shopList();
+  res.send(list);
+});
+
+app.get("/item/add/:id/:ca/:num", async (req, res) => {
+  await itemModel.createItem(req.params);
+  const list = await controller.itemList();
+  res.send(list);
 });
 
 app.get("/ownlist/:eoa", async (req, res) => {
