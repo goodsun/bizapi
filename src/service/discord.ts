@@ -54,7 +54,7 @@ const getMemberList = async (nextid = null) => {
 
     const member: any = {};
 
-    member.id = parseInt(data.user.id);
+    member.id = String(data.user.id);
 
     if (data.nick) {
       member.name = data.nick;
@@ -101,12 +101,13 @@ const getMemberList = async (nextid = null) => {
 };
 
 const getList = async () => {
-  json = [];
   return await getMemberList();
 };
 
 const getDisplayData = async () => {
   const list = await getList();
+  console.log("Discord Member");
+  console.dir(list);
   let result = "\n";
   for (let key in list) {
     const data = list[key];

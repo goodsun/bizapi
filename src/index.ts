@@ -506,7 +506,7 @@ app.post(
   }
 );
 
-if (process.env.NODE_ENV === `develop`) app.listen(80);
+if (process.env.NODE_ENV === `develop`) app.listen(8080);
 
 const server = configure({ app });
 export const handler = (event, context) => {

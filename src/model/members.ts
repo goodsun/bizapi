@@ -8,7 +8,7 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
   const member = await getMember(id);
   let params = CRUD.update;
   params.TableName = TableName;
-  params.Key.DiscordId.N = member.DiscordId.N;
+  params.Key.DiscordId.N = String(member.DiscordId);
   params.UpdateExpression =
     "SET Secret = :secret, Expired = :expired, TmpEoa = :tmpEoa, Updated = :updated";
   params.ExpressionAttributeValues = {
@@ -35,17 +35,17 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
 const memberSetEoa = async (id: String, eoa: String, secret: String) => {
   try {
     const member = await getMember(id);
-    const expired = utils.str2unixtime(member.Expired.S);
+    const expired = utils.str2unixtime(member.Expired);
     const now = utils.str2unixtime(new Date().getTime());
     let result = "取得後結果確認";
     if (
-      utils.isAddressesEqual(member.TmpEoa.S, String(eoa)) &&
-      member.Secret.S == secret &&
+      utils.isAddressesEqual(String(member.TmpEoa), String(eoa)) &&
+      String(member.Secret) == secret &&
       now < expired
     ) {
       let params = CRUD.update;
       params.TableName = TableName;
-      params.Key.DiscordId.N = member.DiscordId.N;
+      params.Key.DiscordId.N = String(member.DiscordId);
       params.UpdateExpression = "SET Eoa = :newVal, Updated = :updated";
       params.ExpressionAttributeValues = {
         ":newVal": { S: eoa } as object,
@@ -101,6 +101,7 @@ const getMemberByEoa = async (eoa) => {
     let user = result.Items[0];
     delete user.TmpEoa;
     delete user.Secret;
+    user.DiscordId = String(user.DiscordId);
     console.dir(user);
     return user;
   } else if (result.Count == 0) {
@@ -114,15 +115,24 @@ const getDisplayMember = async (req) => {
   const member = await getMember(req.params.id);
   let result = "<div>";
   if (member != undefined) {
-    result = result + "<img src='" + member.Icon.S + "' />";
+    result = result + "<img src='" + member.Icon + "' />";
     result = result + "<br />id : " + req.params.id;
-    result = result + "<br /> name : " + member.Name.S;
-    result = result + "<br /> roles : " + member.Roles.SS;
-    result = result + "<br /> join : " + member.Join.S;
-    result = result + "<br /> exit : " + member.DeleteFlag.BOOL;
-    result = result + "<br /> update : " + member.Updated.S;
+    result = result + "<br /> name : " + member.Name;
+    console.log(member.Roles.Count);
+    member.Roles.forEach((role) => {
+      console.log(role);
+    });
+    if (member.Roles.size > 0) {
+      result = result + "<br /> roles : ";
+      member.Roles.forEach((role) => {
+        result = result + "<span>" + role + "</span>  ";
+      });
+    }
+    result = result + "<br /> join : " + member.Join;
+    result = result + "<br /> exit : " + member.DeleteFlag;
+    result = result + "<br /> update : " + member.Updated;
     if (member.Eoa) {
-      result = result + "<br /> eoa : " + member.Eoa.S;
+      result = result + "<br /> eoa : " + member.Eoa;
     }
   }
   result = result + "</div>";
@@ -145,12 +155,12 @@ const getDisplayData = async () => {
         key +
         " | " +
         'Id: <b><a href="/dynamo/member/' +
-        data.DiscordId.N +
+        data.DiscordId +
         '">' +
-        data.DiscordId.N +
+        data.DiscordId +
         "</a></b>" +
         " name: <b>" +
-        data.Name.S +
+        data.Name +
         "</b><br />";
     }
     result = result + "</div>";
@@ -190,14 +200,14 @@ const memberUpdate = async (member) => {
 const memberDelete = async (member) => {
   let params = CRUD.delete;
   params.TableName = TableName;
-  params.Key.DiscordId.N = member.DiscordId.N;
+  params.Key.DiscordId.N = member.DiscordId;
   await dynamoService.deleteItem(params);
 };
 
 const memberSoftDelete = async (member) => {
   let params = CRUD.update;
   params.TableName = TableName;
-  params.Key.DiscordId.N = member.DiscordId.N;
+  params.Key.DiscordId.N = member.DiscordId;
   params.UpdateExpression = "SET DeleteFlag = :newVal, Updated = :updated";
   params.ExpressionAttributeValues = {
     ":newVal": { BOOL: true } as object,
@@ -259,7 +269,7 @@ const memberListUpdate = async (discordList, dynamoList) => {
 const discordId2eoa = async (discordId) => {
   const member = await getMember(discordId);
   if (member) {
-    return member.Eoa.S;
+    return member.Eoa;
   } else {
     return "0x";
   }

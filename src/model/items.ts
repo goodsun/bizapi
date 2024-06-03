@@ -42,8 +42,6 @@ const createItem = async (entity) => {
   params.Item.Name.S = String(entity.name);
   params.Item.Contract.S = String(entity.contract);
   params.Item.TokenId.S = String(entity.tokenid);
-  params.Item.Type.S = String(entity.type);
-  params.Item.Genre.S = String(entity.genre);
   params.Item.Price.N = String(entity.price);
   params.Item.Status.N = String(entity.status);
   params.Item.Json.S = String(entity.json);

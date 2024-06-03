@@ -27,8 +27,6 @@ export const getCrud = () => {
         Name: { S: "contractAddress" },
         Contract: { S: "0" },
         TokenId: { S: "INFO" },
-        Type: { S: "bowl" },
-        Genre: { S: "sangiri" },
         Price: { N: "0" },
         Status: { N: "0" },
         Json: { S: "{}" },
