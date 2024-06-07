@@ -5,10 +5,12 @@ import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
 import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
+import constConnect from "./connect/const.js";
 import contentsConnect from "./connect/contents.js";
 import memberModel from "./model/members.js";
 import shopModel from "./model/shops.js";
 import itemModel from "./model/items.js";
+import contentModel from "./model/content.js";
 import express from "express";
 import {
   verifyKeyMiddleware,
@@ -296,17 +298,81 @@ app.get("/own/:eoa/:ca", async (req, res) => {
 });
 
 app.get("/contents", async (req, res) => {
-  const detail = await contentsConnect.getContent();
+  const detail = await contentModel.getItems("count");
+  res.send(detail);
+});
+
+app.get("/contents/path", async (req, res) => {
+  const detail = await contentModel.getItems("path");
+  res.send(detail);
+});
+
+app.get("/contents/get/:lang", async (req, res) => {
+  const detail = await contentModel.beginWithScan(req.params.lang, "count");
+  res.send(detail);
+});
+
+app.get("/contents/new/:lang", async (req, res) => {
+  const detail = await contentModel.beginWithScan(req.params.lang, "created");
+  res.send(detail);
+});
+
+app.get("/contents/path/:lang", async (req, res) => {
+  const detail = await contentModel.beginWithScan(req.params.lang, "path");
+  res.send(detail);
+});
+
+app.get("/contents/get/:lang/:dir/", async (req, res) => {
+  const detail = await contentModel.beginWithScan(
+    req.params.lang + "/" + req.params.dir,
+    "count"
+  );
+  res.send(detail);
+});
+
+app.get("/contents/new/:lang/:dir/", async (req, res) => {
+  const detail = await contentModel.beginWithScan(
+    req.params.lang + "/" + req.params.dir,
+    "created"
+  );
+  res.send(detail);
+});
+
+app.get("/contents/path/:lang/:dir/", async (req, res) => {
+  const detail = await contentModel.beginWithScan(
+    req.params.lang + "/" + req.params.dir,
+    "path"
+  );
+  res.send(detail);
+});
+
+app.get("/contents/get/:lang/:dir/:md", async (req, res) => {
+  const detail = await contentsConnect.getContent(req.params);
+  res.send(detail);
+});
+
+app.get("/contents/create/:title", async (req, res) => {
+  const params = {
+    path: "ja/common/" + req.params.title,
+    title: req.params.title,
+    imgurl: "https://dao.bon-soleil.com/img/dummy.jpg",
+  };
+  const detail = await contentModel.createItem(params);
+  res.send(detail);
+});
+
+app.get("/contents/get/:id", async (req, res) => {
+  const detail = await contentModel.getItem(req.params.id);
   res.send(detail);
 });
 
 app.get("/genre", async (req, res) => {
-  const detail = await contentsConnect.getGenre();
+  const detail = await constConnect.getGenre();
   res.send(detail);
 });
 
 app.get("/type", async (req, res) => {
-  const detail = await contentsConnect.getType();
+  const detail = await constConnect.getType();
   res.send(detail);
 });
 
