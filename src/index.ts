@@ -3,6 +3,7 @@ import utils from "./common/util.js";
 import { configure } from "@vendia/serverless-express";
 import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
+import { getToken } from "./connect/getToken.js";
 import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
 import constConnect from "./connect/const.js";
@@ -12,6 +13,7 @@ import shopModel from "./model/shops.js";
 import itemModel from "./model/items.js";
 import contentModel from "./model/content.js";
 import express from "express";
+import CryptoJS from "crypto-js";
 import {
   verifyKeyMiddleware,
   InteractionType,
@@ -457,7 +459,7 @@ app.post(
                 "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
                 "\n" +
                 "\n以下のURLにアクセスし、「SECRET」を入力して登録を完了してください。" +
-                "\nURL: https://dao.goodsun.tokyo/regist/" +
+                "\nURL: https://dao.bon-soleil.com/regist/" +
                 message.member.user.id +
                 "\n SECRET:" +
                 secret,
@@ -567,10 +569,51 @@ app.post(
           });
         }
       }
+      if (message.data.name === "demand") {
+        //const guild = await client.guilds.fetch(GUILD_ID);
+        //const member = await guild.members.fetch(message.member.user.id);
+        //console.dir(member);
+        const eoa = await memberModel.discordId2eoa(message.member.user.id);
+        const username = message.member.user.global_name;
+        const info = message.data.options[0].value.split("/");
+        const passwd = message.data.options[1].value;
+        const tokenInfo = await getToken(info[0], "tokenURI", info[1]);
+        const hash = CryptoJS.SHA256(message.data.options[0]);
+        const shortHash = hash.toString(CryptoJS.enc.Hex).substring(0, 12);
+        console.log("HASH: " + shortHash);
+        let diff = "パスワードが一致しません";
+        if (shortHash != passwd) {
+          diff = "パスワードが一致しました。";
+        }
+
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content:
+              username +
+              "の購入したNFTを\n" +
+              eoa +
+              "に送るよう\nメッセージを受け付けました!!\n NFT : " +
+              tokenInfo.name +
+              "\n結果:" +
+              diff +
+              "\n",
+            flags: 64,
+          },
+        });
+      }
       //=============================================================
     }
   }
 );
+
+app.get("/test/:ca/:id", async (req, res) => {
+  const tokenURI = await getToken(req.params.ca, "tokenURI", req.params.id);
+  console.dir(tokenURI);
+  const hash = CryptoJS.SHA256(req.params.ca, "/", req.params.id);
+  const shortHash = hash.toString(CryptoJS.enc.Hex).substring(0, 12);
+  res.send(tokenURI.name + " : " + shortHash);
+});
 
 if (process.env.NODE_ENV === `develop`) app.listen(8080);
 
