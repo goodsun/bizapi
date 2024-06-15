@@ -569,21 +569,49 @@ app.post(
           });
         }
       }
-      if (message.data.name === "demand") {
-        //const guild = await client.guilds.fetch(GUILD_ID);
-        //const member = await guild.members.fetch(message.member.user.id);
-        //console.dir(member);
+      if (message.data.name === "getkey") {
+        const hashInfo = await getShortHash(message.data.options[0].value);
+        const eoa = await memberModel.discordId2eoa(message.member.user.id);
+        if (hashInfo.eoa == eoa) {
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content:
+                "secretkey : " +
+                hashInfo.shortHash +
+                "\nCreator : " +
+                hashInfo.gallaryName +
+                "\nNFT name : " +
+                hashInfo.name +
+                "\nNFT path : " +
+                message.data.options[0].value +
+                "\n" +
+                hashInfo.image +
+                "\n",
+              flags: 64,
+            },
+          });
+        } else {
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content:
+                "NFT:" +
+                hashInfo.name +
+                "のsecretKeyを取得する権限がありません。",
+              flags: 64,
+            },
+          });
+        }
+      }
+      if (message.data.name === "request") {
+        const hashInfo = await getShortHash(message.data.options[0].value);
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const username = message.member.user.global_name;
-        const info = message.data.options[0].value.split("/");
         const passwd = message.data.options[1].value;
-        const tokenInfo = await getToken(info[0], "tokenURI", info[1]);
-        const hash = CryptoJS.SHA256(message.data.options[0]);
-        const shortHash = hash.toString(CryptoJS.enc.Hex).substring(0, 12);
-        console.log("HASH: " + shortHash);
-        let diff = "パスワードが一致しません";
-        if (shortHash != passwd) {
-          diff = "パスワードが一致しました。";
+        let diff = "secretKeyが一致しません";
+        if (hashInfo.shortHash == passwd) {
+          diff = "secretKey一致しました。";
         }
 
         res.send({
@@ -591,12 +619,16 @@ app.post(
           data: {
             content:
               username +
-              "の購入したNFTを\n" +
+              " の購入したNFTを\n" +
               eoa +
-              "に送るよう\nメッセージを受け付けました!!\n NFT : " +
-              tokenInfo.name +
+              " に送るよう\n" +
+              hashInfo.gallaryName +
+              " にメッセージを送信します\n NFT : " +
+              hashInfo.name +
               "\n結果:" +
               diff +
+              "\n" +
+              hashInfo.image +
               "\n",
             flags: 64,
           },
@@ -607,13 +639,53 @@ app.post(
   }
 );
 
-app.get("/test/:ca/:id", async (req, res) => {
-  const tokenURI = await getToken(req.params.ca, "tokenURI", req.params.id);
-  console.dir(tokenURI);
-  const hash = CryptoJS.SHA256(req.params.ca, "/", req.params.id);
-  const shortHash = hash.toString(CryptoJS.enc.Hex).substring(0, 12);
-  res.send(tokenURI.name + " : " + shortHash);
+const getShortHash = async (tokenCaId) => {
+  const info = tokenCaId.split("/");
+  const caInfo = await getToken(info[0], "getInfo", null);
+  if (caInfo) {
+    const creator = caInfo[0];
+    const tokenInfo = await getToken(info[0], "tokenURI", info[1]);
+    const gallary = await shopModel.getItemByEoa(caInfo[0]);
+    const bytes = CryptoJS.AES.decrypt(
+      gallary.Seed,
+      process.env.AES_SECRET_KEY
+    );
+    const Seed = bytes.toString(CryptoJS.enc.Utf8);
+    const hash = CryptoJS.SHA256(Seed + tokenCaId);
+    const shortHash = hash.toString(CryptoJS.enc.Hex).substring(0, 12);
+    let image = tokenInfo.image;
+    if (image.length > 256) {
+      image = undefined;
+    }
+
+    return {
+      shortHash: shortHash,
+      eoa: creator,
+      name: tokenInfo.name,
+      image: image,
+      gallaryName: gallary.Name,
+      gallarytype: gallary.Type,
+      gallaryInfo: JSON.parse(gallary.Json),
+    };
+  } else {
+    return {
+      shortHash: undefined,
+      eoa: undefined,
+      name: undefined,
+      image: undefined,
+      gallaryName: undefined,
+      gallarytype: undefined,
+      gallaryInfo: undefined,
+    };
+  }
+};
+
+/*
+app.get("/checkhashinfo/:ca/:id", async (req, res) => {
+  const hashInfo = await getShortHash(req.params.ca + "/" + req.params.id);
+  res.send(hashInfo);
 });
+*/
 
 if (process.env.NODE_ENV === `develop`) app.listen(8080);
 

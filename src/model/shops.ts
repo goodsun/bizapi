@@ -41,6 +41,7 @@ const createItem = async (entity) => {
   params.Item.Id.N = String(entity.id);
   params.Item.Eoa.S = String(entity.eoa);
   params.Item.Name.S = String(entity.name);
+  params.Item.Seed.S = String(entity.seed);
   params.Item.Imgurl.S = String(entity.imgurl);
   params.Item.Type.S = String(entity.type);
   params.Item.Status.N = String(entity.status);
