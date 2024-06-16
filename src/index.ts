@@ -9,6 +9,7 @@ import getOwn from "./connect/getOwn.js";
 import constConnect from "./connect/const.js";
 import contentsConnect from "./connect/contents.js";
 import memberModel from "./model/members.js";
+import discord from "./service/discord.js";
 import shopModel from "./model/shops.js";
 import itemModel from "./model/items.js";
 import contentModel from "./model/content.js";
@@ -680,12 +681,67 @@ const getShortHash = async (tokenCaId) => {
   }
 };
 
-/*
-app.get("/checkhashinfo/:ca/:id", async (req, res) => {
-  const hashInfo = await getShortHash(req.params.ca + "/" + req.params.id);
-  res.send(hashInfo);
+app.get("/sendMessage", async (req, res) => {
+  const result = await discord.sendMessage();
+  res.send({ SEND: CONST.DISCORD_CHANNEL_ID, result: result });
 });
-*/
+
+app.get("/messageSender/:message", async (req, res) => {
+  await controller.sqsSend({
+    function: "discord-meessage",
+    params: {
+      message: req.params.message,
+      channelId: "1145185184543686776",
+    },
+  });
+  res.send({ SEND: CONST.DISCORD_CHANNEL_ID });
+});
+
+app.post("/transrequest", async (req, res) => {
+  let body = req.body;
+  const hashInfo = await getShortHash(body.ca + "/" + body.id);
+  if (hashInfo.shortHash == body.secret) {
+    const ownerDiscord = await memberModel.getMemberByEoa(body.eoa);
+    const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.eoa);
+    let OwnerID = body.eoa;
+    let CreatorID = hashInfo.eoa;
+    if (ownerDiscord.DiscordId) {
+      OwnerID = "<@" + ownerDiscord.DiscordId + ">";
+    }
+    if (creatorDiscord.DiscordId) {
+      CreatorID = "<@" + creatorDiscord.DiscordId + ">";
+    }
+    const message =
+      CreatorID +
+      " " +
+      OwnerID +
+      " さんの\n" +
+      hashInfo.name +
+      "のNFT購入が認証されました。" +
+      hashInfo.image;
+
+    await controller.sqsSend({
+      function: "discord-meessage",
+      params: {
+        message: message,
+        channelId: "1145185184543686776",
+      },
+    });
+
+    res.send({
+      message: message,
+      requestInfo: {
+        ca: body.ca,
+        id: body.id,
+        name: hashInfo.name,
+        image: hashInfo.image,
+        owner: body.eoa,
+        creator: hashInfo.eoa,
+      },
+    });
+  }
+  res.send({ message: body.eoa + "から不正なsecretが送信されました。" });
+});
 
 if (process.env.NODE_ENV === `develop`) app.listen(8080);
 

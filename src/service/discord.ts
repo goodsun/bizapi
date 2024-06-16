@@ -2,10 +2,37 @@ import { CONST } from "../common/const.js";
 import { setTimeout } from "timers/promises";
 const guild_id = CONST.DISCORD_GUILD_ID;
 const bot_key = CONST.DISCORD_BOT_KEY;
+const channel_id = CONST.DISCORD_CHANNEL_ID;
 let json = [];
 let mode = "get";
 let roles = CONST.roles;
 let roleIds = CONST.roles;
+
+const sendApi = async (endpoint, method, body) => {
+  console.log(method + " : " + endpoint + "bot_key");
+  console.dir(body);
+  const response = await fetch(endpoint, {
+    headers: {
+      accept: "*/*",
+      "User-Agent": "bonsoleilDiscordBot (https://github.com/goodsun/bizbot)",
+      "accept-language": "ja,en-US;q=0.9,en;q=0.8",
+      authorization: `Bot ${bot_key}`,
+      "Content-Type": "application/json",
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin",
+      "sec-gpc": "1",
+      "x-discord-locale": "ja",
+    },
+    referrerPolicy: "strict-origin-when-cross-origin",
+    body: JSON.stringify(body),
+    method: method,
+    mode: "cors",
+    credentials: "include",
+  });
+  console.dir(response);
+  return response;
+};
 
 async function loadCustomConstants() {
   try {
@@ -127,10 +154,21 @@ const getDisplayData = async () => {
   return result;
 };
 
+const sendMessage = async () => {
+  const url =
+    "https://discord.com/api/v10/channels/" + channel_id + "/messages";
+  const body = {
+    content: "これはAPIから送信されたメッセージです。",
+  };
+  const result = await sendApi(url, "post", body);
+  return result;
+};
+
 const discordService = {
   getList,
   getMemberList,
   getDisplayData,
+  sendMessage,
 };
 
 export default discordService;

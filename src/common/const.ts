@@ -20,6 +20,8 @@ export const CONST = {
   DYNAMO_WRITE_WAIT_TIME: 200,
   ARTICLE_REPOSITORY_URL: process.env.ARTICLE_REPOSITORY_URL,
 
+  DISCORD_CHANNEL_ID: process.env.DISCORD_CHANNEL_ID,
+
   RPC_URL: process.env.RPC_URL,
   MANAGER_CA: process.env.MANAGER_CA,
   DONATE_CA: process.env.DONATE_CA,
