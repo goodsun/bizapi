@@ -10,7 +10,7 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
   params.TableName = TableName;
   params.Key.DiscordId.N = String(member.DiscordId);
   params.UpdateExpression =
-    "SET Secret = :secret, Expired = :expired, TmpEoa = :tmpEoa, Updated = :updated";
+    "SET #Secret = :secret, #Expired = :expired, #TmpEoa = :tmpEoa, #Updated = :updated";
   params.ExpressionAttributeValues = {
     ":secret": { S: secret } as object,
     ":tmpEoa": { S: tmpEoa } as object,
@@ -19,6 +19,12 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
       S: new Date(new Date().getTime() + 10 * 60 * 1000),
     } as object,
   };
+  params.ExpressionAttributeNames = {
+    "#Secret": "Secret",
+    "#Expired": "Expired",
+    "#TmpEoa": "TmpEoa",
+    "#Updated": "Updated",
+  } as object;
   await dynamoService.updateItem(params);
 
   const detail =
@@ -169,38 +175,58 @@ const getDisplayData = async () => {
 };
 
 const memberCreate = async (member) => {
+  console.log("メンバー情報新規登録");
   let params = CRUD.write;
   params.TableName = TableName;
-  params.Item.DiscordId.N = String(member.id);
-  params.Item.Name.S = member.name;
-  params.Item.Icon.S = member.icon;
-  params.Item.Join.S = member.join;
-  if (member.roles.length == 0) {
+  params.Item.DiscordId.N = String(member.DiscordId);
+  params.Item.Name.S = member.Name;
+  params.Item.Username.S = member.Username;
+  params.Item.Icon.S = member.Icon;
+  params.Item.Join.S = member.Join;
+  if (member.Roles.length == 0) {
     params.Item.Roles.SS = [""];
   } else {
-    params.Item.Roles.SS = member.roles;
+    params.Item.Roles.SS = member.Roles;
   }
   await dynamoService.putItem(params);
 };
 
 const memberUpdate = async (member) => {
-  let params = CRUD.write;
-  params.TableName = TableName;
-  params.Item.DiscordId.N = String(member.id);
-  params.Item.Name.S = member.name;
-  params.Item.Icon.S = member.icon;
-  if (member.roles.length == 0) {
-    params.Item.Roles.SS = [""];
-  } else {
-    params.Item.Roles.SS = member.roles;
+  const exist = await getMember(member.DiscordId);
+  console.dir(exist);
+  if (!exist) {
+    await memberCreate(member);
+    return;
   }
-  await dynamoService.putItem(params);
+  console.log("メンバー情報更新");
+  let params = CRUD.update;
+  params.TableName = TableName;
+  params.Key.DiscordId.N = String(member.DiscordId);
+  params.UpdateExpression =
+    "SET #Name = :Name, #Username = :Username, #Icon = :Icon, #Roles= :roles, #Updated = :updated";
+  params.ExpressionAttributeNames = {
+    "#Name": "Name",
+    "#Username": "Username",
+    "#Icon": "Icon",
+    "#Roles": "Roles",
+    "#Updated": "Updated",
+  } as object;
+  params.ExpressionAttributeValues = {
+    ":Name": { S: member.Name } as object,
+    ":Username": { S: member.Username } as object,
+    ":Icon": { S: member.Icon } as object,
+    ":roles": { SS: member.Roles } as object,
+    ":updated": { S: new Date(new Date().getTime()) } as object,
+  };
+  console.dir(params);
+  await dynamoService.updateItem(params);
 };
 
-const memberDelete = async (member) => {
+const memberDelete = async (id) => {
+  console.log("メンバー削除" + id);
   let params = CRUD.delete;
   params.TableName = TableName;
-  params.Key.DiscordId.N = member.DiscordId;
+  params.Key.DiscordId.N = id;
   await dynamoService.deleteItem(params);
 };
 

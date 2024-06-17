@@ -8,6 +8,7 @@ import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
 import constConnect from "./connect/const.js";
 import contentsConnect from "./connect/contents.js";
+import discordConnect from "./connect/discord.js";
 import memberModel from "./model/members.js";
 import discord from "./service/discord.js";
 import shopModel from "./model/shops.js";
@@ -379,6 +380,18 @@ app.get("/type", async (req, res) => {
   res.send(detail);
 });
 
+app.get("/discordMember/:id", async (req, res) => {
+  const member = await discordConnect.memberInfo(req.params.id);
+  memberModel.memberUpdate(member);
+  const role = await discordConnect.getRoleId("Holder &Fan");
+
+  res.send({ member: member, role: role });
+});
+app.get("/killMember/:id", async (req, res) => {
+  memberModel.memberDelete(req.params.id);
+  res.send({ message: "削除しました" });
+});
+
 app.post(
   "/interactions",
   verifyKeyMiddleware(CONST.DISCORD_PUB_KEY),
@@ -393,6 +406,7 @@ app.post(
           const guild = await client.guilds.fetch(GUILD_ID);
           const member = await guild.members.fetch(message.member.user.id);
           await member.roles.add(ROLE_IDS.SUPPORTER);
+
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {
@@ -429,6 +443,9 @@ app.post(
         });
       }
       if (message.data.name === "regist") {
+        const member = await discordConnect.memberInfo(message.member.user.id);
+        memberModel.memberUpdate(member);
+
         const secret = utils.generateRandomString(12);
         await memberModel.memberSetSecret(
           message.member.user.id,
@@ -517,7 +534,17 @@ app.post(
         }
 
         if (tokenCount > 0) {
-          responseMes = "あなたの持っているNFT\n" + responseMes;
+          if (tokenCount > 3) {
+            const maniaId = await discordConnect.getRoleId("Engineer");
+            await member.roles.add(maniaId);
+          }
+          const roleId = await discordConnect.getRoleId("Holder &Fan");
+          await member.roles.add(roleId);
+          responseMes =
+            "あなたは有効なNFTの所有者です。\n" +
+            "Holder & FAN ロールが付与されました。\n" +
+            "あなたの持っているNFT\n" +
+            responseMes;
         } else {
           responseMes = "あなたは有効なNFTを持っていません";
         }
@@ -590,7 +617,8 @@ app.post(
                 message.data.options[0].value +
                 "\n" +
                 hashInfo.image +
-                "\n",
+                "\n" +
+                message.data.options[0].value,
               flags: 64,
             },
           });
@@ -607,37 +635,6 @@ app.post(
           });
         }
       }
-      if (message.data.name === "request") {
-        const hashInfo = await getShortHash(message.data.options[0].value);
-        const eoa = await memberModel.discordId2eoa(message.member.user.id);
-        const username = message.member.user.global_name;
-        const passwd = message.data.options[1].value;
-        let diff = "secretKeyが一致しません";
-        if (hashInfo.shortHash == passwd) {
-          diff = "secretKey一致しました。";
-        }
-
-        res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            content:
-              username +
-              " の購入したNFTを\n" +
-              eoa +
-              " に送るよう\n" +
-              hashInfo.gallaryName +
-              " にメッセージを送信します\n NFT : " +
-              hashInfo.name +
-              "\n結果:" +
-              diff +
-              "\n" +
-              hashInfo.image +
-              "\n",
-            flags: 64,
-          },
-        });
-      }
-      //=============================================================
     }
   }
 );
@@ -684,22 +681,6 @@ const getShortHash = async (tokenCaId) => {
   }
 };
 
-app.get("/sendMessage", async (req, res) => {
-  const result = await discord.sendMessage();
-  res.send({ SEND: CONST.DISCORD_CHANNEL_ID, result: result });
-});
-
-app.get("/messageSender/:message", async (req, res) => {
-  await controller.sqsSend({
-    function: "discord-meessage",
-    params: {
-      message: req.params.message,
-      channelId: "1145185184543686776",
-    },
-  });
-  res.send({ SEND: CONST.DISCORD_CHANNEL_ID });
-});
-
 app.post("/transrequest", async (req, res) => {
   let body = req.body;
   const hashInfo = await getShortHash(body.ca + "/" + body.id);
@@ -722,15 +703,17 @@ app.post("/transrequest", async (req, res) => {
 
     const message =
       CreatorID +
-      " さん。\n " +
+      " さん。\n" +
       OwnerID +
-      " さんによる " +
+      " さんのNFT購入[ " +
       hashInfo.name +
-      " のNFT購入が認証されました。\nこちらのNFTを\n" +
+      " ]が認証されました。\n以下のURLよりこちらのNFTを\n" +
       body.eoa +
       "\nにお送りください。\n" +
       CONST.PROVIDER_URL +
-      "/tokens/" +
+      "/donate/" +
+      body.eoa +
+      "/" +
       body.ca +
       "/" +
       body.id;
@@ -744,7 +727,7 @@ app.post("/transrequest", async (req, res) => {
     });
 
     res.send({
-      message: message,
+      message: "Your request has been approved.",
       requestInfo: {
         ca: body.ca,
         id: body.id,
