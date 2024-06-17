@@ -55,7 +55,7 @@ const fetchContents = async (PATH, FILE) => {
       console.log(markdown);
       const title = extractTitle(markdown);
       const images = extractImageUrls(markdown);
-      let imgUrl = "https://dao.bon-soleil.com/img/dummy.jpg";
+      let imgUrl = CONST.PROVIDER_URL + "/img/dummy.jpg";
       if (images.length > 0) {
         imgUrl = images[0];
       }

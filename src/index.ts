@@ -358,7 +358,7 @@ app.get("/contents/create/:title", async (req, res) => {
   const params = {
     path: "ja/common/" + req.params.title,
     title: req.params.title,
-    imgurl: "https://dao.bon-soleil.com/img/dummy.jpg",
+    imgurl: CONST.PROVIDER_URL + "/img/dummy.jpg",
   };
   const detail = await contentModel.createItem(params);
   res.send(detail);
@@ -460,7 +460,9 @@ app.post(
                 "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
                 "\n" +
                 "\n以下のURLにアクセスし、「SECRET」を入力して登録を完了してください。" +
-                "\nURL: https://dao.bon-soleil.com/regist/" +
+                "\nURL: " +
+                CONST.PROVIDER_URL +
+                "/regist/" +
                 message.member.user.id +
                 "\n SECRET:" +
                 secret,
@@ -661,6 +663,7 @@ const getShortHash = async (tokenCaId) => {
 
     return {
       shortHash: shortHash,
+      channelId: gallary.ChannelId,
       eoa: creator,
       name: tokenInfo.name,
       image: image,
@@ -705,26 +708,38 @@ app.post("/transrequest", async (req, res) => {
     const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.eoa);
     let OwnerID = body.eoa;
     let CreatorID = hashInfo.eoa;
+    let ChannelId = CONST.DISCORD_CHANNEL_ID;
+
     if (ownerDiscord.DiscordId) {
       OwnerID = "<@" + ownerDiscord.DiscordId + ">";
     }
     if (creatorDiscord.DiscordId) {
       CreatorID = "<@" + creatorDiscord.DiscordId + ">";
     }
+    if (hashInfo.channelId) {
+      ChannelId = hashInfo.channelId;
+    }
+
     const message =
       CreatorID +
-      " " +
+      " さん。\n " +
       OwnerID +
-      " さんの\n" +
+      " さんによる " +
       hashInfo.name +
-      "のNFT購入が認証されました。" +
-      hashInfo.image;
+      " のNFT購入が認証されました。\nこちらのNFTを\n" +
+      body.eoa +
+      "\nにお送りください。\n" +
+      CONST.PROVIDER_URL +
+      "/tokens/" +
+      body.ca +
+      "/" +
+      body.id;
 
     await controller.sqsSend({
       function: "discord-meessage",
       params: {
         message: message,
-        channelId: "1145185184543686776",
+        channelId: ChannelId,
       },
     });
 
