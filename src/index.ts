@@ -383,10 +383,10 @@ app.get("/type", async (req, res) => {
 app.get("/discordMember/:id", async (req, res) => {
   const member = await discordConnect.memberInfo(req.params.id);
   memberModel.memberUpdate(member);
-  const role = await discordConnect.getRoleId("Holder &Fan");
-
+  const role = await discordConnect.setRoleId(req.params.id, "Holder &Fan");
   res.send({ member: member, role: role });
 });
+
 app.get("/killMember/:id", async (req, res) => {
   memberModel.memberDelete(req.params.id);
   res.send({ message: "削除しました" });
@@ -402,27 +402,14 @@ app.post(
 
       //=============================================================
       if (message.data.name === "gm") {
-        try {
-          const guild = await client.guilds.fetch(GUILD_ID);
-          const member = await guild.members.fetch(message.member.user.id);
-          await member.roles.add(ROLE_IDS.SUPPORTER);
-
-          res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              content: `${message.member.user.global_name}さんGM!\n挨拶のできるあなたをSUPPORTERに任命します!`,
-              flags: 64,
-            },
-          });
-        } catch (error) {
-          console.error("Error adding role:", error);
-          res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              content: `ロールの付与に失敗しました: ${error.message}`,
-            },
-          });
-        }
+        discordConnect.setRoleId(message.member.user.id, "Supporter");
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: `${message.member.user.global_name}さんGM!\n挨拶のできるあなたをSUPPORTERに任命します!`,
+            flags: 64,
+          },
+        });
       }
 
       if (message.data.name === "work") {
@@ -498,15 +485,12 @@ app.post(
       }
 
       if (message.data.name === "apply") {
-        const guild = await client.guilds.fetch(GUILD_ID);
-        const member = await guild.members.fetch(message.member.user.id);
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const ownlist = await getOwn.getOwnByEoa(eoa);
         let responseMes = "";
         let tokenCount = 0;
 
         if (ownlist.nftList.length > 0) {
-          await member.roles.add(ROLE_IDS.BIZEN_HOLDER);
           responseMes = responseMes + "NFT LIST\n";
           for (let key in ownlist.nftList) {
             tokenCount++;
@@ -520,7 +504,6 @@ app.post(
         }
 
         if (ownlist.sbtList.length > 0) {
-          await member.roles.add(ROLE_IDS.COMMUNITY_MANAGER);
           responseMes = responseMes + "SBT LIST\n";
           for (let key in ownlist.sbtList) {
             tokenCount++;
@@ -534,12 +517,7 @@ app.post(
         }
 
         if (tokenCount > 0) {
-          if (tokenCount > 3) {
-            const maniaId = await discordConnect.getRoleId("Engineer");
-            await member.roles.add(maniaId);
-          }
-          const roleId = await discordConnect.getRoleId("Holder &Fan");
-          await member.roles.add(roleId);
+          discordConnect.setRoleId(message.member.user.id, "Holder &Fan");
           responseMes =
             "あなたは有効なNFTの所有者です。\n" +
             "Holder & FAN ロールが付与されました。\n" +

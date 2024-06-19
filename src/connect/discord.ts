@@ -1,5 +1,6 @@
 import { CONST } from "../common/const.js";
 import { Client, GatewayIntentBits } from "discord.js";
+import memberModel from "../model/members.js";
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
@@ -34,21 +35,23 @@ const memberInfo = async (id) => {
     Join: joinedAt,
   };
 };
-const getRoleId = async (name) => {
+const setRoleId = async (memberId, roleName) => {
   const guild = await client.guilds.fetch(GUILD_ID);
+  const member = await guild.members.fetch(memberId);
   const roles = await guild.roles.fetch();
-  let result = "";
   roles.forEach((role) => {
-    if (role.name == name) {
-      result = role.id;
+    if (role.name == roleName) {
+      member.roles.add(role.id);
     }
   });
-  return result;
+  memberInfo(memberId).then((member) => {
+    memberModel.memberUpdate(member);
+  });
 };
 
 const discordConnect = {
   memberInfo,
-  getRoleId,
+  setRoleId,
 };
 
 export default discordConnect;
