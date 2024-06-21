@@ -35,6 +35,7 @@ const memberInfo = async (id) => {
     Join: joinedAt,
   };
 };
+
 const setRoleId = async (memberId, roleName) => {
   const guild = await client.guilds.fetch(GUILD_ID);
   const member = await guild.members.fetch(memberId);

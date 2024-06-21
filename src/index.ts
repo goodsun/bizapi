@@ -3,45 +3,21 @@ import utils from "./common/util.js";
 import { configure } from "@vendia/serverless-express";
 import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
-import { getToken } from "./connect/getToken.js";
 import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
 import constConnect from "./connect/const.js";
 import contentsConnect from "./connect/contents.js";
 import discordConnect from "./connect/discord.js";
 import memberModel from "./model/members.js";
-import discord from "./service/discord.js";
 import shopModel from "./model/shops.js";
 import itemModel from "./model/items.js";
 import contentModel from "./model/content.js";
 import express from "express";
-import CryptoJS from "crypto-js";
 import {
   verifyKeyMiddleware,
   InteractionType,
   InteractionResponseType,
 } from "discord-interactions";
-import { Client, GatewayIntentBits } from "discord.js";
-let ROLE_IDS: any = {};
-
-async function loadCustomConstants() {
-  try {
-    const { CUSTOM_SETTINGS } = await import("./common/customSettings.js");
-    ROLE_IDS = CUSTOM_SETTINGS.roleIds;
-  } catch (error) {
-    ROLE_IDS = CONST.roleIds;
-  }
-}
-loadCustomConstants();
-
-const TOKEN = CONST.DISCORD_BOT_KEY;
-const GUILD_ID = CONST.DISCORD_GUILD_ID;
-
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
-});
-
-client.login(TOKEN);
 
 if (CONST.API_ENV == undefined) {
   console.log("SETTING ERROR");
@@ -142,14 +118,6 @@ app.post("/shop/update/:id", async (req, res) => {
   res.send(result);
 });
 
-/*
-app.get("/shop/add/:id/:name", async (req, res) => {
-  await shopModel.createItem(req.params);
-  const response = await controller.shopList();
-  res.send(response);
-});
-*/
-
 app.get("/item", async (_, res) => {
   const response = await controller.itemList();
   res.send(response);
@@ -168,16 +136,12 @@ app.get("/item/eoa/:eoa", async (req, res) => {
 app.post("/item/add", async (req, res) => {
   let body = req.body;
   body.id = await itemModel.getNewId();
-  console.log("post item add body(+ newid)");
-  console.dir(body);
   const result = await itemModel.createItem(body);
   res.send(body);
 });
 
 app.post("/item/delete", async (req, res) => {
   const body = req.body;
-  console.log("post item body");
-  console.dir(body);
   if (CONST.DYNAMO_SOFT_DELETE == "true") {
     await itemModel.softDeleteItem(body.id);
   } else {
@@ -193,14 +157,6 @@ app.post("/item/update/:id", async (req, res) => {
   const result = await itemModel.createItem(body);
   res.send(result);
 });
-
-/*
-app.get("/item/add/:id/:name", async (req, res) => {
-  await itemModel.createItem(req.params);
-  const response = await controller.itemList();
-  res.send(response);
-});
-*/
 
 app.get("/ownlist/:eoa", async (req, res) => {
   const ownlist = await getOwn.getOwnByEoa(req.params.eoa);
@@ -225,18 +181,6 @@ app.get("/ownlist/:eoa", async (req, res) => {
 
   res.send({ message: responseMes, list: ownlist });
 });
-
-/*
-app.get("/member/:id/setTmpEoa/:eoa/:secret", async (req, res) => {
-  const result = "<h1>dynamoList</h1>";
-  const detail = await memberModel.memberSetEoa(
-    String(req.params.id),
-    String(req.params.eoa),
-    String(req.params.secret)
-  );
-  res.send(result + detail);
-});
-*/
 
 app.get("/member/:eoa", async (req, res) => {
   const detail = await memberModel.getMemberByEoa(req.params.eoa);
@@ -283,7 +227,6 @@ app.post("/regist", async (req, res) => {
     body.eoa,
     body.secret
   );
-
   res.send({ message: result });
 });
 
@@ -390,6 +333,66 @@ app.get("/discordMember/:id", async (req, res) => {
 app.get("/killMember/:id", async (req, res) => {
   memberModel.memberDelete(req.params.id);
   res.send({ message: "削除しました" });
+});
+
+app.post("/transrequest", async (req, res) => {
+  let body = req.body;
+  const hashInfo = await utils.getShortHash(body.ca + "/" + body.id);
+  if (hashInfo.shortHash == body.secret) {
+    const ownerDiscord = await memberModel.getMemberByEoa(body.eoa);
+    const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.eoa);
+    let OwnerID = body.eoa;
+    let CreatorID = hashInfo.eoa;
+    let ChannelId = CONST.DISCORD_CHANNEL_ID;
+
+    if (ownerDiscord.DiscordId) {
+      OwnerID = "<@" + ownerDiscord.DiscordId + ">";
+    }
+    if (creatorDiscord.DiscordId) {
+      CreatorID = "<@" + creatorDiscord.DiscordId + ">";
+    }
+    if (hashInfo.channelId) {
+      ChannelId = hashInfo.channelId;
+    }
+
+    const message =
+      CreatorID +
+      " さん。\n" +
+      OwnerID +
+      " さんのNFT購入[ " +
+      hashInfo.name +
+      " ]が認証されました。\n以下のURLよりこちらのNFTを\n" +
+      body.eoa +
+      "\nにお送りください。\n" +
+      CONST.PROVIDER_URL +
+      "/donate/" +
+      body.eoa +
+      "/" +
+      body.ca +
+      "/" +
+      body.id;
+
+    await controller.sqsSend({
+      function: "discord-meessage",
+      params: {
+        message: message,
+        channelId: ChannelId,
+      },
+    });
+
+    res.send({
+      message: "Your request has been approved.",
+      requestInfo: {
+        ca: body.ca,
+        id: body.id,
+        name: hashInfo.name,
+        image: hashInfo.image,
+        owner: body.eoa,
+        creator: hashInfo.eoa,
+      },
+    });
+  }
+  res.send({ message: body.eoa + "から不正なsecretが送信されました。" });
 });
 
 app.post(
@@ -578,7 +581,9 @@ app.post(
         }
       }
       if (message.data.name === "getkey") {
-        const hashInfo = await getShortHash(message.data.options[0].value);
+        const hashInfo = await utils.getShortHash(
+          message.data.options[0].value
+        );
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         if (hashInfo.eoa == eoa) {
           res.send({
@@ -589,10 +594,15 @@ app.post(
                 hashInfo.shortHash +
                 "\nCreator : " +
                 hashInfo.gallaryName +
+                "\nNFT contract : " +
+                hashInfo.contractInfo +
+                " #" +
+                hashInfo.pathInfo +
+                "\nNFT path : " +
+                hashInfo.pathInfo +
+                message.data.options[0].value +
                 "\nNFT name : " +
                 hashInfo.name +
-                "\nNFT path : " +
-                message.data.options[0].value +
                 "\n" +
                 hashInfo.image +
                 "\n" +
@@ -616,108 +626,6 @@ app.post(
     }
   }
 );
-
-const getShortHash = async (tokenCaId) => {
-  const info = tokenCaId.split("/");
-  const caInfo = await getToken(info[0], "getInfo", null);
-  if (caInfo) {
-    const creator = caInfo[0];
-    const tokenInfo = await getToken(info[0], "tokenURI", info[1]);
-    const gallary = await shopModel.getItemByEoa(caInfo[0]);
-    const bytes = CryptoJS.AES.decrypt(
-      gallary.Seed,
-      process.env.AES_SECRET_KEY
-    );
-    const Seed = bytes.toString(CryptoJS.enc.Utf8);
-    const hash = CryptoJS.SHA256(Seed + tokenCaId);
-    const shortHash = hash.toString(CryptoJS.enc.Hex).substring(0, 12);
-    let image = tokenInfo.image;
-    if (image.length > 256) {
-      image = undefined;
-    }
-
-    return {
-      shortHash: shortHash,
-      channelId: gallary.ChannelId,
-      eoa: creator,
-      name: tokenInfo.name,
-      image: image,
-      gallaryName: gallary.Name,
-      gallarytype: gallary.Type,
-      gallaryInfo: JSON.parse(gallary.Json),
-    };
-  } else {
-    return {
-      shortHash: undefined,
-      eoa: undefined,
-      name: undefined,
-      image: undefined,
-      gallaryName: undefined,
-      gallarytype: undefined,
-      gallaryInfo: undefined,
-    };
-  }
-};
-
-app.post("/transrequest", async (req, res) => {
-  let body = req.body;
-  const hashInfo = await getShortHash(body.ca + "/" + body.id);
-  if (hashInfo.shortHash == body.secret) {
-    const ownerDiscord = await memberModel.getMemberByEoa(body.eoa);
-    const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.eoa);
-    let OwnerID = body.eoa;
-    let CreatorID = hashInfo.eoa;
-    let ChannelId = CONST.DISCORD_CHANNEL_ID;
-
-    if (ownerDiscord.DiscordId) {
-      OwnerID = "<@" + ownerDiscord.DiscordId + ">";
-    }
-    if (creatorDiscord.DiscordId) {
-      CreatorID = "<@" + creatorDiscord.DiscordId + ">";
-    }
-    if (hashInfo.channelId) {
-      ChannelId = hashInfo.channelId;
-    }
-
-    const message =
-      CreatorID +
-      " さん。\n" +
-      OwnerID +
-      " さんのNFT購入[ " +
-      hashInfo.name +
-      " ]が認証されました。\n以下のURLよりこちらのNFTを\n" +
-      body.eoa +
-      "\nにお送りください。\n" +
-      CONST.PROVIDER_URL +
-      "/donate/" +
-      body.eoa +
-      "/" +
-      body.ca +
-      "/" +
-      body.id;
-
-    await controller.sqsSend({
-      function: "discord-meessage",
-      params: {
-        message: message,
-        channelId: ChannelId,
-      },
-    });
-
-    res.send({
-      message: "Your request has been approved.",
-      requestInfo: {
-        ca: body.ca,
-        id: body.id,
-        name: hashInfo.name,
-        image: hashInfo.image,
-        owner: body.eoa,
-        creator: hashInfo.eoa,
-      },
-    });
-  }
-  res.send({ message: body.eoa + "から不正なsecretが送信されました。" });
-});
 
 if (process.env.NODE_ENV === `develop`) app.listen(8080);
 
