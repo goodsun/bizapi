@@ -111,7 +111,14 @@ const getList = async () => {
   return result;
 };
 
+const deleteContent = async (PATH) => {
+  let contentData = await contentModel.checkContentByPath(PATH);
+  console.dir(contentData);
+  return contentData;
+};
+
 const contentsConnect = {
+  deleteContent,
   getContent,
   getList,
 };

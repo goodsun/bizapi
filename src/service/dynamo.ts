@@ -132,6 +132,29 @@ const getAllItems = async (tableName) => {
   return list;
 };
 
+const getEoaList = async (tableName) => {
+  const list = await getAllItems(tableName);
+  let result = "\n";
+  for (let key in list) {
+    const data = list[key];
+    if (data.Eoa != undefined) {
+      result =
+        result +
+        "EOA: <b>" +
+        data.Eoa.S +
+        "</b> " +
+        " | name:<b>" +
+        data.Name.S +
+        "</b> discord:<a href='/dynamo/member/" +
+        data.DiscordId.N +
+        "'>" +
+        data.DiscordId.N +
+        "</a><br />";
+    }
+  }
+  return result;
+};
+
 const getDisplayData = async (tableName) => {
   const list = await getAllItems(tableName);
   let result = "\n";
@@ -140,15 +163,15 @@ const getDisplayData = async (tableName) => {
     result =
       result +
       key +
-      " | name:" +
+      " | name:<b>" +
       data.Name.S +
-      " discordId:" +
+      "</b> Discord:" +
       data.DiscordId.N +
       " roles:" +
       data.Roles.SS +
       " join:" +
-      data.Join.S +
-      "\n";
+      data.Join.S;
+    ("<br />");
   }
   return result;
 };
@@ -190,6 +213,7 @@ const dynamoService = {
   query,
   getAllItems,
   getDisplayData,
+  getEoaList,
   getMaxId,
 };
 

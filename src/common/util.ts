@@ -59,6 +59,7 @@ const getShortHash = async (tokenCaId) => {
   if (caInfo) {
     const creator = caInfo[0];
     const tokenInfo = await getToken(info[0], "tokenURI", info[1]);
+    const owner = await getToken(info[0], "ownerOf", info[1]);
     const contractName = await getToken(info[0], "name", null);
     const gallary = await shopModel.getItemByEoa(caInfo[0]);
     const bytes = CryptoJS.AES.decrypt(
@@ -76,7 +77,8 @@ const getShortHash = async (tokenCaId) => {
     return {
       shortHash: shortHash,
       channelId: gallary.ChannelId,
-      eoa: creator,
+      owner: owner,
+      creator: creator,
       name: tokenInfo.name,
       image: image,
       gallaryName: gallary.Name,

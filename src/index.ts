@@ -57,12 +57,6 @@ app.get("/notion", async (_, res) => {
   res.send(result + list);
 });
 
-app.get("/dynamo", async (_, res) => {
-  const result = "<h1>dynamoList</h1>";
-  const list = await controller.dynamoList();
-  res.send(result + list);
-});
-
 app.get("/item", async (_, res) => {
   const list = await controller.itemList();
   res.send(list);
@@ -192,6 +186,18 @@ app.get("/discord/:id", async (req, res) => {
   res.send(detail);
 });
 
+app.get("/dynamo", async (_, res) => {
+  const result = "<h1>dynamoList</h1>";
+  const list = await controller.dynamoList();
+  res.send(result + list);
+});
+
+app.get("/eoalist", async (_, res) => {
+  const result = "<h1>eoaList</h1>";
+  const list = await controller.eoaList();
+  res.send(result + list);
+});
+
 app.get("/dynamo/member/:id", async (req, res) => {
   const result = "<h1>dynamoList</h1>";
   const detail = await memberModel.getDisplayMember(req);
@@ -227,7 +233,7 @@ app.post("/regist", async (req, res) => {
     body.eoa,
     body.secret
   );
-  res.send({ message: result });
+  res.send(result);
 });
 
 app.get("/tba/:cid/:rca/:aca/:ca/:id/:salt", async (req, res) => {
@@ -293,6 +299,13 @@ app.get("/contents/path/:lang/:dir/", async (req, res) => {
   res.send(detail);
 });
 
+app.get("/contents/delete/:lang/:dir/:md", async (req, res) => {
+  const detail = await contentsConnect.deleteContent(
+    req.params.lang + "/" + req.params.dir + "/" + req.params.md
+  );
+  res.send(detail);
+});
+
 app.get("/contents/get/:lang/:dir/:md", async (req, res) => {
   const detail = await contentsConnect.getContent(req.params);
   res.send(detail);
@@ -340,9 +353,9 @@ app.post("/transrequest", async (req, res) => {
   const hashInfo = await utils.getShortHash(body.ca + "/" + body.id);
   if (hashInfo.shortHash == body.secret) {
     const ownerDiscord = await memberModel.getMemberByEoa(body.eoa);
-    const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.eoa);
+    const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.creator);
     let OwnerID = body.eoa;
-    let CreatorID = hashInfo.eoa;
+    let CreatorID = hashInfo.creator;
     let ChannelId = CONST.DISCORD_CHANNEL_ID;
 
     if (ownerDiscord.DiscordId) {
@@ -373,7 +386,7 @@ app.post("/transrequest", async (req, res) => {
       body.id;
 
     await controller.sqsSend({
-      function: "discord-meessage",
+      function: "discord-message",
       params: {
         message: message,
         channelId: ChannelId,
@@ -388,7 +401,7 @@ app.post("/transrequest", async (req, res) => {
         name: hashInfo.name,
         image: hashInfo.image,
         owner: body.eoa,
-        creator: hashInfo.eoa,
+        creator: hashInfo.creator,
       },
     });
   }
@@ -485,6 +498,29 @@ app.post(
             },
           });
         }
+      }
+
+      if (message.data.name === "editor") {
+        const eoa = await memberModel.discordId2eoa(message.member.user.id);
+        const secret = utils.generateRandomString(12);
+        await memberModel.memberSetSecret(message.member.user.id, eoa, secret);
+
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content:
+              "執筆活動はこちらから \n EOA:" +
+              eoa +
+              "\n\n以下のURLにアクセスし、「PASSWORD」を利用してログインください。" +
+              "\nURL: " +
+              CONST.PROVIDER_URL +
+              "/editor/" +
+              message.member.user.id +
+              "\n PASSWORD:" +
+              secret,
+            flags: 64,
+          },
+        });
       }
 
       if (message.data.name === "apply") {
@@ -585,7 +621,7 @@ app.post(
           message.data.options[0].value
         );
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
-        if (hashInfo.eoa == eoa) {
+        if (hashInfo.owner == eoa) {
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {

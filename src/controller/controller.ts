@@ -1,6 +1,7 @@
 import { CONST } from "../common/const.js";
 import sqsService from "../service/sqs.js";
 import discordService from "../service/discord.js";
+import dynamoService from "../service/dynamo.js";
 import notionService from "../service/notion.js";
 import memberModel from "../model/members.js";
 import shopModel from "../model/shops.js";
@@ -23,9 +24,19 @@ const itemList = async () => {
   return result;
 };
 
+const eoaList = async () => {
+  console.log("DYNAMO SETTING prefix : " + CONST.DYNAMO_TABLE_PREFIX);
+  const result = await dynamoService.getEoaList(
+    CONST.DYNAMO_TABLE_PREFIX + "_member"
+  );
+  return result;
+};
+
 const dynamoList = async () => {
   console.log("DYNAMO SETTING prefix : " + CONST.DYNAMO_TABLE_PREFIX);
-  const result = await memberModel.getDisplayData();
+  const result = await dynamoService.getDisplayData(
+    CONST.DYNAMO_TABLE_PREFIX + "_member"
+  );
   return result;
 };
 
@@ -61,6 +72,7 @@ const controller = {
   dynamoUpdate,
   notionUpdate,
   sqsSend,
+  eoaList,
 };
 
 export default controller;

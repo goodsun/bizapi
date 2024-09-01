@@ -43,7 +43,8 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
     const member = await getMember(id);
     const expired = utils.str2unixtime(member.Expired);
     const now = utils.str2unixtime(new Date().getTime());
-    let result = "取得後結果確認";
+    let message = "取得後結果確認";
+    let result = false;
     if (
       utils.isAddressesEqual(String(member.TmpEoa), String(eoa)) &&
       String(member.Secret) == secret &&
@@ -52,20 +53,35 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
       let params = CRUD.update;
       params.TableName = TableName;
       params.Key.DiscordId.N = String(member.DiscordId);
-      params.UpdateExpression = "SET Eoa = :newVal, Updated = :updated";
+      params.UpdateExpression = "SET #Eoa = :newVal, #Updated = :updated";
       params.ExpressionAttributeValues = {
         ":newVal": { S: eoa } as object,
         ":updated": { S: new Date(new Date().getTime()) } as object,
       };
+      params.ExpressionAttributeNames = {
+        "#Eoa": "Eoa",
+        "#Updated": "Updated",
+      } as object;
+
+      console.log("EXP UPDATE ITEM SET :" + String(member.DiscordId));
+      console.dir(params);
+
       await dynamoService.updateItem(params);
-      result += " 承認OK";
+      console.log("承認OKでした");
+      message += " 承認OK";
+      result = true;
     } else {
-      result += " 承認NG";
+      console.log("承認NGでした");
+      message += " 承認NG";
     }
 
-    return result;
+    let Role: string[] = [];
+    member.Roles.forEach((role) => {
+      Role.push(role);
+    });
+    return { message: message, result: result, role: Role };
   } catch (error) {
-    return "エラーが発生しました。";
+    return { message: "エラーが発生しました", result: false };
   }
 };
 
