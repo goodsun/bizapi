@@ -204,6 +204,20 @@ app.get("/dynamo/member/:id", async (req, res) => {
   res.send(result + detail);
 });
 
+app.get("/metadata/member/:id", async (req, res) => {
+  const member = await memberModel.getMember(req.params.id);
+  const donateBalance = await getDonate.getDonate("balance", member.Eoa);
+  const result = {
+    id: req.params.id,
+    name: member.Name,
+    eoa: member.Eoa,
+    roles: Array.from(member.Roles),
+    icon: member.Icon,
+    donate: donateBalance,
+  };
+  res.send(result);
+});
+
 app.get("/token/:method/:ca", async (req, res) => {
   let result = "<h1>Get Token</h1>";
   const detail = await ethController.getTokenInfo(req);
@@ -472,19 +486,21 @@ app.post(
                 eoa +
                 "\n" +
                 balance +
-                " matic\n" +
+                " POL\n" +
                 donateBalance +
                 " donatePoint\n" +
                 "\n<ご注意>:" +
                 "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
                 "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
                 "\n" +
-                "\n以下のURLにアクセスし、「SECRET」を入力して登録を完了してください。" +
-                "\nURL: " +
+                "\n以下のURLにアクセスし、ウォレットを接続して登録を完了してください。" +
+                "\nURL : " +
                 CONST.PROVIDER_URL +
                 "/regist/" +
                 message.member.user.id +
-                "\n SECRET:" +
+                "/" +
+                secret +
+                "\n SECRET : " +
                 secret,
               flags: 64,
             },
@@ -500,6 +516,28 @@ app.post(
         }
       }
 
+      if (message.data.name === "member-sbt") {
+        const eoa = await memberModel.discordId2eoa(message.member.user.id);
+        const secret = utils.generateRandomString(12);
+        await memberModel.memberSetSecret(message.member.user.id, eoa, secret);
+
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content:
+              "会員証SBT発行はこちらから \n EOA : " +
+              eoa +
+              "\n\n以下のURLにアクセスしウォレットを接続して会員証を発行してください。" +
+              "\nURL: " +
+              CONST.PROVIDER_URL +
+              "/membersbt/" +
+              message.member.user.id +
+              "/" +
+              secret,
+            flags: 64,
+          },
+        });
+      }
       if (message.data.name === "editor") {
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const secret = utils.generateRandomString(12);
@@ -509,14 +547,14 @@ app.post(
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
             content:
-              "執筆活動はこちらから \n EOA:" +
+              "記事の執筆はこちらから \n EOA : " +
               eoa +
-              "\n\n以下のURLにアクセスし、「PASSWORD」を利用してログインください。" +
+              "\n\n以下のURLにアクセスしウォレットを接続してログインしてください。" +
               "\nURL: " +
               CONST.PROVIDER_URL +
               "/editor/" +
               message.member.user.id +
-              "\n PASSWORD:" +
+              "/" +
               secret,
             flags: 64,
           },
