@@ -517,6 +517,15 @@ app.post(
       }
 
       if (message.data.name === "member-sbt") {
+        if (message.member.roles.includes(CONST.DISCORD_HOLDER_ROLE)) {
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: "会員証の発行にはHolder ＆FAN ロールが必要です。",
+              flags: 64,
+            },
+          });
+        }
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const secret = utils.generateRandomString(12);
         await memberModel.memberSetSecret(message.member.user.id, eoa, secret);
