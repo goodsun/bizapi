@@ -517,7 +517,7 @@ app.post(
       }
 
       if (message.data.name === "member-sbt") {
-        if (message.member.roles.includes(CONST.DISCORD_HOLDER_ROLE)) {
+        if (!message.member.roles.includes(CONST.DISCORD_HOLDER_ROLE)) {
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {
