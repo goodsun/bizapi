@@ -207,6 +207,7 @@ app.get("/dynamo/member/:id", async (req, res) => {
 app.get("/metadata/member/:id", async (req, res) => {
   const member = await memberModel.getMember(req.params.id);
   const donateBalance = await getDonate.getDonate("balance", member.Eoa);
+  const totalDonate = await getDonate.getDonate("totaldonations", member.Eoa);
   const result = {
     id: req.params.id,
     name: member.Name,
@@ -214,6 +215,7 @@ app.get("/metadata/member/:id", async (req, res) => {
     roles: Array.from(member.Roles),
     icon: member.Icon,
     donate: donateBalance,
+    totaldonate: totalDonate,
   };
   res.send(result);
 });
