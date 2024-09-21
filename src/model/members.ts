@@ -10,10 +10,11 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
   params.TableName = TableName;
   params.Key.DiscordId.N = String(member.DiscordId);
   params.UpdateExpression =
-    "SET #Secret = :secret, #Expired = :expired, #TmpEoa = :tmpEoa, #Updated = :updated";
+    "SET #Secret = :secret, #Roles = :roles,#Expired = :expired, #TmpEoa = :tmpEoa, #Updated = :updated";
   params.ExpressionAttributeValues = {
     ":secret": { S: secret } as object,
     ":tmpEoa": { S: tmpEoa } as object,
+    ":roles": { SS: ["test0", "test1", "test2"] } as object,
     ":updated": { S: new Date(new Date().getTime()) } as object,
     ":expired": {
       S: new Date(new Date().getTime() + 10 * 60 * 1000),
@@ -22,6 +23,7 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
   params.ExpressionAttributeNames = {
     "#Secret": "Secret",
     "#Expired": "Expired",
+    "#Roles": "Roles",
     "#TmpEoa": "TmpEoa",
     "#Updated": "Updated",
   } as object;
