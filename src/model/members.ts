@@ -4,7 +4,12 @@ import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
 const TableName = CONST.DYNAMO_TABLE_PREFIX + "_member";
 
-const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
+const memberSetSecret = async (
+  id: String,
+  tmpEoa: String,
+  secret: String,
+  roles: object
+) => {
   const member = await getMember(id);
   let params = CRUD.update;
   params.TableName = TableName;
@@ -14,7 +19,7 @@ const memberSetSecret = async (id: String, tmpEoa: String, secret: String) => {
   params.ExpressionAttributeValues = {
     ":secret": { S: secret } as object,
     ":tmpEoa": { S: tmpEoa } as object,
-    ":roles": { SS: ["test0", "test1", "test2"] } as object,
+    ":roles": { SS: roles } as object,
     ":updated": { S: new Date(new Date().getTime()) } as object,
     ":expired": {
       S: new Date(new Date().getTime() + 10 * 60 * 1000),

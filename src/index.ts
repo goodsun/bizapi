@@ -469,7 +469,8 @@ app.post(
         await memberModel.memberSetSecret(
           message.member.user.id,
           message.data.options[0].value,
-          secret
+          secret,
+          message.member.roles
         );
         const eoa = message.data.options[0].value;
         const isEOA = await getDonate.isEOA(eoa);
@@ -530,7 +531,12 @@ app.post(
         }
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const secret = utils.generateRandomString(12);
-        await memberModel.memberSetSecret(message.member.user.id, eoa, secret);
+        await memberModel.memberSetSecret(
+          message.member.user.id,
+          eoa,
+          secret,
+          message.member.roles
+        );
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -552,7 +558,12 @@ app.post(
       if (message.data.name === "editor") {
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const secret = utils.generateRandomString(12);
-        await memberModel.memberSetSecret(message.member.user.id, eoa, secret);
+        await memberModel.memberSetSecret(
+          message.member.user.id,
+          eoa,
+          secret,
+          message.member.roles
+        );
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
