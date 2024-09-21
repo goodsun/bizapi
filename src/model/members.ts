@@ -3,13 +3,23 @@ import { CONST } from "../common/const.js";
 import utils from "../common/util.js";
 import dynamoService from "../service/dynamo.js";
 const TableName = CONST.DYNAMO_TABLE_PREFIX + "_member";
+const roleNames = {
+  "1143943645205102632": "Admin",
+  "1144649703712104639": "Engineer",
+  "1206600859962834954": "member",
+  "1206603253580701726": "Holder &Fan",
+  "1206865922950955028": "Potter",
+  "1206867833292722236": "CommunityManager",
+  "1210764298280902656": "Supporter",
+};
 
 const memberSetSecret = async (
   id: String,
   tmpEoa: String,
   secret: String,
-  roles: object
+  roles
 ) => {
+  const holdRoles = roles.map((num) => roleNames[num]);
   const member = await getMember(id);
   let params = CRUD.update;
   params.TableName = TableName;
@@ -19,7 +29,7 @@ const memberSetSecret = async (
   params.ExpressionAttributeValues = {
     ":secret": { S: secret } as object,
     ":tmpEoa": { S: tmpEoa } as object,
-    ":roles": { SS: roles } as object,
+    ":roles": { SS: holdRoles } as object,
     ":updated": { S: new Date(new Date().getTime()) } as object,
     ":expired": {
       S: new Date(new Date().getTime() + 10 * 60 * 1000),
