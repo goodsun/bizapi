@@ -141,6 +141,7 @@ const getMemberByEoa = async (eoa) => {
     delete user.TmpEoa;
     delete user.Secret;
     user.DiscordId = String(user.DiscordId);
+    user.Roles = Array.from(user.Roles);
     console.dir(user);
     return user;
   } else if (result.Count == 0) {
