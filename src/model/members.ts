@@ -11,6 +11,7 @@ const roleNames = {
   "1206865922950955028": "Potter",
   "1206867833292722236": "CommunityManager",
   "1210764298280902656": "Supporter",
+  "1287453818853789787": "Soul Binder",
 };
 
 const memberSetSecret = async (
