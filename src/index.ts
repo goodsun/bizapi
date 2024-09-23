@@ -544,17 +544,17 @@ app.post(
         }
 
         await controller.sqsSend({
-          function: "discord-message",
+          function: "discord-direct-message",
           params: {
-            message: sendMessage,
-            channelId: CONST.DISCORD_CHANNEL_ID,
+            message: message,
+            userId: message.member.user.id,
           },
         });
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content: "Regist機能を実行しました。",
+            content: "Registを受付しました。BizBotより返信いたします。",
             flags: 64,
           },
         });
