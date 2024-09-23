@@ -32,7 +32,6 @@ const fetchContents = async (PATH, FILE) => {
     const response = await fetch(URL);
     if (!response.ok) {
       if (response.status == 404) {
-        console.log("FILE NOT FOUND status:" + response.status);
         const contentData = await contentModel.checkContentByPath(PATH + FILE);
         if (contentData.Count > 0) {
           for (let key in contentData.Items) {
@@ -41,9 +40,6 @@ const fetchContents = async (PATH, FILE) => {
             await contentModel.deleteItem(contentData.Items[key].Id);
           }
         }
-      } else {
-        console.log("RESPONSE NG status:" + response.status);
-        console.dir(response);
       }
     } else {
       let markdown = await response.text();
@@ -51,15 +47,12 @@ const fetchContents = async (PATH, FILE) => {
         CONST.ARTICLE_REPOSITORY_URL + "md/" + PATH,
         markdown
       );
-
-      console.log(markdown);
       const title = extractTitle(markdown);
       const images = extractImageUrls(markdown);
       let imgUrl = CONST.PROVIDER_URL + "/img/dummy.jpg";
       if (images.length > 0) {
         imgUrl = images[0];
       }
-      console.log("This Contents Is Exist:" + title + imgUrl + PATH + FILE);
       countUp(PATH + FILE, title, imgUrl);
       return markdown;
     }
@@ -85,11 +78,9 @@ const countUp = async (PATH, title, img) => {
     let updateData = contentData.Items[0];
     updateData.AccessCount = 1;
     for (let key in contentData.Items) {
-      console.log("まとめ対象" + key);
       updateData.AccessCount =
         updateData.AccessCount + Number(contentData.Items[key].AccessCount) + 1;
       if (Number(key) > 0) {
-        console.log("重複削除" + key + " ID:" + contentData.Items[key].Id);
         await contentModel.deleteItem(contentData.Items[key].Id);
       }
     }
@@ -105,15 +96,12 @@ const getContent = async (params) => {
 };
 
 const getList = async () => {
-  console.log("getContents");
   const result = await contentModel.getItems("count");
-  console.dir(result);
   return result;
 };
 
 const deleteContent = async (PATH) => {
   let contentData = await contentModel.checkContentByPath(PATH);
-  console.dir(contentData);
   return contentData;
 };
 

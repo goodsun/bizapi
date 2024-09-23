@@ -26,7 +26,6 @@ const erc1155Abi = [
 ];
 
 const getOwn = (eoa: string, ca: string, type?: string | null) => {
-  console.log("getOwn runninng eoa:" + eoa + " ca:" + ca);
   if (type == "721") {
     return getERC721Tokens(eoa, ca);
   } else if (type == "1155") {
@@ -42,7 +41,6 @@ async function getBizNft(ownerAddress: string, contractAddress: string) {
   try {
     const balance = await contract.balanceOf(ownerAddress);
     if (balance < 0) {
-      console.log("not own");
       return [];
     }
 
@@ -55,8 +53,6 @@ async function getBizNft(ownerAddress: string, contractAddress: string) {
         tokens.push({ tokenId: i, owner: owner, tokenURI });
       }
     }
-
-    console.dir(tokens);
     return tokens;
   } catch (error) {
     console.error("Error occurred:", error);
@@ -112,7 +108,6 @@ const getOwnByEoa = async (eoa: string) => {
   for (let key in nftContracts) {
     const result = await getToken(nftContracts[key][0], "balanceOf", eoa);
     if (result > 0) {
-      console.log("balanceOf " + nftContracts[key][1] + " : " + result);
       nftList.push([nftContracts[key][1], Number(result)]);
     }
   }
@@ -121,7 +116,6 @@ const getOwnByEoa = async (eoa: string) => {
   for (let key in sbtContracts) {
     const result = await getToken(sbtContracts[key][0], "balanceOf", eoa);
     if (result > 0) {
-      console.log("balanceOf " + sbtContracts[key][1] + " : " + result);
       sbtList.push([sbtContracts[key][1], Number(result)]);
     }
   }

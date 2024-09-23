@@ -81,15 +81,10 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
         "#Updated": "Updated",
       } as object;
 
-      console.log("EXP UPDATE ITEM SET :" + String(member.DiscordId));
-      console.dir(params);
-
       await dynamoService.updateItem(params);
-      console.log("承認OKでした");
       message += " 承認OK";
       result = true;
     } else {
-      console.log("承認NGでした");
       message += " 承認NG";
     }
 
@@ -102,10 +97,31 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
     return { message: "エラーが発生しました", result: false };
   }
 };
+const memberDisconnect = async (id: String, eoa: String) => {
+  try {
+    const member = await getMember(id);
+    if (utils.isAddressesEqual(String(member.Eoa), String(eoa))) {
+      let params = CRUD.delete;
+      params.TableName = TableName;
+      params.Key.DiscordId.N = String(id);
+      await dynamoService.deleteItem(params);
+      return {
+        message: "deleted eoa:" + member.Eoa + " id:" + member.DiscordId,
+        result: true,
+      };
+    }
+  } catch (error) {
+    return { message: "エラーが発生しました", result: false };
+  }
+};
 
-const getMemberList = async () => {
+const getMemberList = async (target?) => {
   let params = CRUD.query;
-  params.TableName = TableName;
+  if (target != undefined) {
+    params.TableName = target;
+  } else {
+    params.TableName = TableName;
+  }
   const result = await dynamoService.query(params);
   return result;
 };
@@ -143,7 +159,6 @@ const getMemberByEoa = async (eoa) => {
     delete user.Secret;
     user.DiscordId = String(user.DiscordId);
     user.Roles = Array.from(user.Roles);
-    console.dir(user);
     return user;
   } else if (result.Count == 0) {
     return { message: "member not found" };
@@ -159,10 +174,6 @@ const getDisplayMember = async (req) => {
     result = result + "<img src='" + member.Icon + "' />";
     result = result + "<br />id : " + req.params.id;
     result = result + "<br /> name : " + member.Name;
-    console.log(member.Roles.Count);
-    member.Roles.forEach((role) => {
-      console.log(role);
-    });
     if (member.Roles.size > 0) {
       result = result + "<br /> roles : ";
       member.Roles.forEach((role) => {
@@ -210,7 +221,6 @@ const getDisplayData = async () => {
 };
 
 const memberCreate = async (member) => {
-  console.log("メンバー情報新規登録");
   let params = CRUD.write;
   params.TableName = TableName;
   params.Item.DiscordId.N = String(member.DiscordId);
@@ -218,6 +228,11 @@ const memberCreate = async (member) => {
   params.Item.Username.S = member.Username;
   params.Item.Icon.S = member.Icon;
   params.Item.Join.S = member.Join;
+  if (member.Eoa != undefined) {
+    params.Item.Eoa.S = member.Eoa;
+  } else {
+    params.Item.Eoa.S = "";
+  }
   if (member.Roles.length == 0) {
     params.Item.Roles.SS = [""];
   } else {
@@ -228,12 +243,10 @@ const memberCreate = async (member) => {
 
 const memberUpdate = async (member) => {
   const exist = await getMember(member.DiscordId);
-  console.dir(exist);
   if (!exist) {
     await memberCreate(member);
     return;
   }
-  console.log("メンバー情報更新");
   let params = CRUD.update;
   params.TableName = TableName;
   params.Key.DiscordId.N = String(member.DiscordId);
@@ -253,12 +266,10 @@ const memberUpdate = async (member) => {
     ":roles": { SS: member.Roles } as object,
     ":updated": { S: new Date(new Date().getTime()) } as object,
   };
-  console.dir(params);
   await dynamoService.updateItem(params);
 };
 
 const memberDelete = async (id) => {
-  console.log("メンバー削除" + id);
   let params = CRUD.delete;
   params.TableName = TableName;
   params.Key.DiscordId.N = id;
@@ -323,8 +334,6 @@ const memberListUpdate = async (discordList, dynamoList) => {
       }
     }
   }
-  console.log("dis:" + discordList.length + " dyn:" + dynamoList.length);
-  console.log("add:" + addCnt + " update:" + updateCnt + " del:" + delCnt);
 };
 
 const discordId2eoa = async (discordId) => {
@@ -350,6 +359,7 @@ const memberModel = {
   getDisplayMember,
   memberSetSecret,
   memberSetEoa,
+  memberDisconnect,
   discordId2eoa,
 };
 export default memberModel;

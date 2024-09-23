@@ -20,7 +20,7 @@ import {
 } from "discord-interactions";
 
 if (CONST.API_ENV == undefined) {
-  console.log("SETTING ERROR");
+  console.log("bizenAPI SETTING ERROR");
   process.exit(1);
 }
 const app = express();
@@ -43,6 +43,53 @@ app.use(express.json());
 app.get("/", async (_, res) => {
   const result = "<h1>BIZBOT API ver." + CONST.VERSION + "</h1>";
   res.send(result);
+});
+
+app.get("/dynamosync", async (_, res) => {
+  if (CONST.API_ENV != "PRD") {
+    await controller.sqsSend({
+      function: "dynamo-sync",
+      params: {
+        user_id: "1142658556609450065",
+        user_name: "administrator",
+      },
+    });
+    res.send({ message: CONST.API_ENV + "更新します" });
+  }
+  res.send({ message: CONST.API_ENV + "PRD利用不可" });
+});
+
+app.get("/dynamosync/create", async (_, res) => {
+  if (CONST.API_ENV != "PRD") {
+    res.send({ message: CONST.API_ENV + "更新できません" });
+  }
+  res.send({ message: CONST.API_ENV + "PRD利用不可" });
+});
+
+app.get("/membersync/", async (_, res) => {
+  if (CONST.API_ENV != "PRD") {
+    const masterTarget = CONST.DYNAMO_TABLE_PREFIX_MASTER + "_member";
+    const replicaTarget = CONST.DYNAMO_TABLE_PREFIX + "_member";
+    const title = masterTarget + " => " + replicaTarget;
+    const org_member = await memberModel.getMemberList(masterTarget);
+    let result = "sync data :";
+    for (let key in org_member.Items) {
+      const repMember = org_member.Items[key];
+      repMember.Roles = Array.from(repMember.Roles);
+      try {
+        await memberModel.memberCreate(repMember);
+        result += "name : " + repMember.Name + "\n";
+      } catch (error) {
+        console.error("Try-Catch error index 83 :", error);
+      }
+    }
+    res.send({
+      message: title,
+      result: result,
+    });
+  } else {
+    res.send({ message: CONST.API_ENV + "PRD利用不可" });
+  }
 });
 
 app.get("/message", async (_, res) => {
@@ -92,16 +139,12 @@ app.get("/shop/eoa/:eoa", async (req, res) => {
 app.post("/shop/add", async (req, res) => {
   let body = req.body;
   body.id = await shopModel.getNewId();
-  console.log("post shop add body(+ newid)");
-  console.dir(body);
-  const result = await shopModel.createItem(body);
+  await shopModel.createItem(body);
   res.send(body);
 });
 
 app.post("/shop/delete", async (req, res) => {
   const body = req.body;
-  console.log("post shop body");
-  console.dir(body);
   if (CONST.DYNAMO_SOFT_DELETE == "true") {
     await shopModel.softDeleteItem(body.id);
   } else {
@@ -113,7 +156,6 @@ app.post("/shop/delete", async (req, res) => {
 app.post("/shop/update/:id", async (req, res) => {
   const body = req.body;
   body.id = req.params.id;
-  console.dir(body);
   const result = await shopModel.createItem(body);
   res.send(result);
 });
@@ -153,7 +195,6 @@ app.post("/item/delete", async (req, res) => {
 app.post("/item/update/:id", async (req, res) => {
   const body = req.body;
   body.id = req.params.id;
-  console.dir(body);
   const result = await itemModel.createItem(body);
   res.send(result);
 });
@@ -164,7 +205,6 @@ app.get("/ownlist/:eoa", async (req, res) => {
   if (ownlist.nftList.length > 0) {
     responseMes += "NFT LIST\n";
     for (let key in ownlist.nftList) {
-      console.log(ownlist.nftList[key]);
       responseMes +=
         ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
     }
@@ -173,13 +213,18 @@ app.get("/ownlist/:eoa", async (req, res) => {
   if (ownlist.nftList.length > 0) {
     responseMes += "SBT LIST\n";
     for (let key in ownlist.nftList) {
-      console.log(ownlist.nftList[key]);
       responseMes +=
         ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
     }
   }
 
   res.send({ message: responseMes, list: ownlist });
+});
+
+app.get("/member", async (_, res) => {
+  const result = "<h1>memberList</h1>";
+  const list = await controller.memberList();
+  res.send(result + list);
 });
 
 app.get("/member/:eoa", async (req, res) => {
@@ -255,6 +300,12 @@ app.post("/regist", async (req, res) => {
     body.eoa,
     body.secret
   );
+  res.send(result);
+});
+
+app.post("/disconnect", async (req, res) => {
+  const body = req.body;
+  const result = await memberModel.memberDisconnect(body.discordId, body.eoa);
   res.send(result);
 });
 
@@ -382,6 +433,18 @@ app.get("/sendMember/:id", async (req, res) => {
   res.send({ message: message });
 });
 
+app.get("/sendMember/:id/:mes", async (req, res) => {
+  const message = "sendMessage for member:";
+  await controller.sqsSend({
+    function: "discord-direct-message",
+    params: {
+      message: req.params.mes,
+      userId: req.params.id,
+    },
+  });
+  res.send({ message: message + req.params.mes + " to " + req.params.id });
+});
+
 app.post("/transrequest", async (req, res) => {
   let body = req.body;
   const hashInfo = await utils.getShortHash(body.ca + "/" + body.id);
@@ -473,24 +536,21 @@ app.post(
         const member = await discordConnect.memberInfo(message.member.user.id);
         const eoa = message.data.options[0].value;
         const exist = await memberModel.getMemberByEoa(eoa);
+        const nowMember = await memberModel.getMember(message.member.user.id);
         const isEOA = await getDonate.isEOA(eoa);
-        if (member.DiscordId == exist.DiscordId) {
-          memberModel.memberUpdate(member);
-          sendMessage = "メンバー情報をアップデートしました。 \n EOA:" + eoa;
-        } else if (exist.DiscordId != undefined) {
+        if (!isEOA) {
+          sendMessage = "こちらのアドレスはEOAではありません。 \n EOA:" + eoa;
+        } else if (
+          exist.DiscordId != undefined &&
+          exist.DiscordId != message.member.user.id
+        ) {
           sendMessage =
-            "EOA:" +
-            eoa +
-            "\nこちらのEOAは既に " +
-            exist.Name +
-            " のウォレットとして登録されています。 \n" +
-            "\nウォレットを変更したい場合は以下のURLにアクセスし、\n" +
-            eoa +
-            "の接続解除を行なってください。\n" +
-            "\nURL : " +
-            CONST.PROVIDER_URL +
-            "/disconnect/";
-        } else if (isEOA) {
+            "こちらのEOAは " + exist.Name + " に利用されています \n EOA:" + eoa;
+        } else if (
+          exist.message == "member not found" &&
+          (nowMember == undefined || nowMember.Eoa == undefined)
+        ) {
+          memberModel.memberUpdate(member);
           const secret = utils.generateRandomString(12);
           await memberModel.memberSetSecret(
             message.member.user.id,
@@ -498,21 +558,11 @@ app.post(
             secret,
             message.member.roles
           );
-
-          const balance = await getDonate.getBalance(eoa);
-          let donateBalance = await getDonate.getDonate("balance", eoa);
-          if (donateBalance == undefined) {
-            donateBalance = "0";
-          }
           sendMessage =
             message.member.user.global_name +
             "のアカウントを以下のウォレットアドレスに紐づけます \n EOA:" +
             eoa +
             "\n" +
-            balance +
-            " POL\n" +
-            donateBalance +
-            " donatePoint\n" +
             "\n<ご注意>:" +
             "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
             "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
@@ -526,11 +576,19 @@ app.post(
             secret +
             "\n SECRET : " +
             secret;
+        } else if (eoa == nowMember.Eoa) {
+          memberModel.memberUpdate(member);
+          sendMessage = "メンバー情報をアップデートしました。 \n EOA:" + eoa;
         } else {
-          sendMessage = "こちらのアドレスはEOAではありません。 \n EOA:" + eoa;
+          sendMessage =
+            "あなたのDiscordには既に\n" +
+            nowMember.Eoa +
+            "が紐づいています" +
+            "\n解除するには以下にアクセスしてください。" +
+            CONST.PROVIDER_URL +
+            "/disconnect/";
         }
 
-        /*
         await controller.sqsSend({
           function: "discord-direct-message",
           params: {
@@ -538,7 +596,6 @@ app.post(
             userId: message.member.user.id,
           },
         });
-        */
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -579,7 +636,6 @@ app.post(
           "/" +
           secret;
 
-        /*
         await controller.sqsSend({
           function: "discord-direct-message",
           params: {
@@ -587,7 +643,6 @@ app.post(
             userId: message.member.user.id,
           },
         });
-        */
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -618,7 +673,6 @@ app.post(
           message.member.user.id +
           "/" +
           secret;
-        /*
         await controller.sqsSend({
           function: "discord-direct-message",
           params: {
@@ -626,7 +680,6 @@ app.post(
             userId: message.member.user.id,
           },
         });
-        */
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -692,7 +745,6 @@ app.post(
       if (message.data.name === "sync") {
         if (message.member.roles.includes(CONST.DISCORD_SYNC_ROLE)) {
           let synctype = message.data.options[0].value ?? "";
-          console.log("SYNC TYPE" + synctype);
           let returnmes = "";
           switch (synctype) {
             case "notion":
@@ -718,7 +770,6 @@ app.post(
             default:
               returnmes = "指定タイプが不明です:" + synctype;
           }
-          console.log(returnmes);
           res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: { content: returnmes, flags: 64 },
@@ -773,6 +824,7 @@ app.post(
           });
         }
       }
+      console.log("slash command requested" + JSON.stringify(message));
     }
   }
 );

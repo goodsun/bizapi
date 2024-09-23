@@ -27,6 +27,7 @@ export const CRUD = {
       Icon: { S: "https://example.com/test.png" },
       Roles: { SS: ["none"] },
       Join: { S: new Date() },
+      Eoa: { S: "" },
       DeleteFlag: { BOOL: "false" },
       Updated: { S: new Date() },
     },

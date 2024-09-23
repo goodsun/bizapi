@@ -10,13 +10,11 @@ import { Message } from "../types/message.js";
 
 const discordList = async () => {
   const result = await discordService.getDisplayData();
-  console.log("Discord test:" + result);
   return result;
 };
 
 const discordMessage = async (message, channel_id) => {
   const result = await discordService.sendMessage(message, channel_id);
-  console.log("Discord test:" + result);
   return result;
 };
 
@@ -30,8 +28,12 @@ const itemList = async () => {
   return result;
 };
 
+const memberList = async () => {
+  const result = await memberModel.getDisplayData();
+  return result;
+};
+
 const eoaList = async () => {
-  console.log("DYNAMO SETTING prefix : " + CONST.DYNAMO_TABLE_PREFIX);
   const result = await dynamoService.getEoaList(
     CONST.DYNAMO_TABLE_PREFIX + "_member"
   );
@@ -39,7 +41,6 @@ const eoaList = async () => {
 };
 
 const dynamoList = async () => {
-  console.log("DYNAMO SETTING prefix : " + CONST.DYNAMO_TABLE_PREFIX);
   const result = await dynamoService.getDisplayData(
     CONST.DYNAMO_TABLE_PREFIX + "_member"
   );
@@ -48,13 +49,11 @@ const dynamoList = async () => {
 
 const notionList = async () => {
   const result = await notionService.getDisplayData();
-  console.log("Notion test:" + result);
   return result;
 };
 
 const sqsSend = async (message: Message) => {
   const result = await sqsService.sendMessage(JSON.stringify(message));
-  console.log("SendMes" + result);
   return result;
 };
 const notionUpdate = async () => {
@@ -74,6 +73,7 @@ const controller = {
   discordMessage,
   dynamoList,
   notionList,
+  memberList,
   itemList,
   shopList,
   dynamoUpdate,

@@ -34,7 +34,6 @@ const createTable = async () => {
   let params = getCrud().create;
   params.TableName = TableName;
   const result = await dynamoService.createTable(params);
-  console.dir(result);
   return "TABLE CREATE : " + TableName;
 };
 
@@ -45,7 +44,6 @@ const getAllItems = async () => {
 const getItems = async (sortkey) => {
   let params = getCrud().query;
   params.TableName = TableName;
-  console.dir(params);
   const result = await dynamoService.query(params);
   if (result == undefined) {
     return createTable();
@@ -63,7 +61,6 @@ const getItem = async (id) => {
   let params = getCrud().read;
   params.TableName = TableName;
   params.Key.Id.N = String(id);
-  console.dir(params);
   return await dynamoService.getItem(params);
 };
 
@@ -76,7 +73,6 @@ const createItem = async (entity) => {
   params.Item.Imgurl.S = String(entity.imgurl);
   params.Item.AccessCount.N = "0";
   params.Item.DeleteFlag.BOOL = "false";
-  console.dir(params);
   await dynamoService.putItem(params);
 };
 

@@ -15,10 +15,8 @@ const notionUpdate = async function (request, retryCount = 0) {
   } catch (e) {
     retryCount++;
     if (retryCount > CONST.RETRY_LIMIT) {
-      console.log("update failed");
       return false;
     }
-    console.log("update retry:" + retryCount);
     sleep(CONST.RETRY_WAIT);
     response = await notionUpdate(request, retryCount);
   }
@@ -32,10 +30,8 @@ const notionCreate = async function (request, retryCount = 0) {
   } catch (e) {
     retryCount++;
     if (retryCount > CONST.RETRY_LIMIT) {
-      console.log("create failed");
       return false;
     }
-    console.log("create retry:" + retryCount);
     sleep(CONST.RETRY_WAIT);
     response = await notionCreate(request, retryCount);
   }
@@ -49,10 +45,8 @@ const notionQuery = async function (request, retryCount = 0) {
   } catch (e) {
     retryCount++;
     if (retryCount > CONST.RETRY_LIMIT) {
-      console.log("fetch failed");
       return false;
     }
-    console.log("fetch retry:" + retryCount);
     sleep(CONST.RETRY_WAIT);
     response = await notionQuery(request, retryCount);
   }
@@ -103,7 +97,6 @@ const memberListUpdate = async (discordList, notionList) => {
   for (let key in discordList) {
     const member = discordList[key];
     const filteredItems = notionList.filter((item) => item.id === member.id);
-    console.log(new Date() + " UPDate Notion Member:" + member.name);
 
     const roles = [];
     for (let i = 0; i < member.roles.length; i++) {
@@ -126,8 +119,6 @@ const memberListUpdate = async (discordList, notionList) => {
 
     if (filteredItems.length == 0) {
       addCnt++;
-      console.log("CREATE : " + member.name);
-
       const params = NotionMember.create;
       params.icon.external.url = member.icon;
       params.properties.name.title = [{ text: { content: member.name } }];
@@ -150,7 +141,6 @@ const memberListUpdate = async (discordList, notionList) => {
         dcRoles !== ntRoles
       ) {
         updateCnt++;
-        console.log("UPDATE : " + member.name);
 
         const params = NotionMember.update;
         params.page_id = filteredItems[0].page_id;
@@ -171,15 +161,12 @@ const memberListUpdate = async (discordList, notionList) => {
       const filteredItems = discordList.filter((item) => item.id === member.id);
       if (filteredItems.length == 0 && !member.exit) {
         delCnt++;
-        console.log("EXIT : " + member.page_id);
         const params = NotionMember.delete;
         params.page_id = member.page_id;
         await notionUpdate(params);
       }
     }
   }
-  console.log("discord:" + discordList.length + " notion:" + notionList.length);
-  console.log("add:" + addCnt + " update:" + updateCnt + " del:" + delCnt);
 };
 
 const getDisplayData = async () => {

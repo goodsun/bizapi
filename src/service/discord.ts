@@ -9,8 +9,6 @@ let roles = CONST.roles;
 let roleIds = CONST.roles;
 
 const sendApi = async (endpoint, method, body) => {
-  console.log(method + " : " + endpoint + "bot_key");
-  console.dir(body);
   const response = await fetch(endpoint, {
     headers: {
       accept: "*/*",
@@ -30,7 +28,6 @@ const sendApi = async (endpoint, method, body) => {
     mode: "cors",
     credentials: "include",
   });
-  console.dir(response);
   return response;
 };
 
@@ -101,8 +98,7 @@ const getMemberList = async (nextid = null) => {
     } else if (data.user.avatar) {
       member.icon = `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`;
     } else {
-      member.icon =
-        "https://discord.com/assets/f9bb9c4af2b9c32a2c5ee0014661546d.png";
+      member.icon = "https://bizen.sbs/img/alt.jpg";
     }
 
     member.join = data.joined_at;
@@ -133,8 +129,6 @@ const getList = async () => {
 
 const getDisplayData = async () => {
   const list = await getList();
-  console.log("Discord Member");
-  console.dir(list);
   let result = "\n";
   for (let key in list) {
     const data = list[key];

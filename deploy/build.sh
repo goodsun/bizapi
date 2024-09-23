@@ -1,6 +1,4 @@
 #!/bin/bash
-LAMBDA_FUNCTION_NAME=nodeapi
-
 dir=$(cd $(dirname $0); pwd)
 cd ${dir}
 
@@ -9,11 +7,13 @@ mkdir ../dist
 
 if [ $1 = 'stg' ]; then
 	cp stg.env ../dist/.env
+	LAMBDA_FUNCTION_NAME=stg_api
 	filename="stg_upload.zip"
 	rm ${dir}/../${filename}
 	echo 'Zip for STG'
 elif [ $1 = 'prd' ]; then
 	cp prd.env ../dist/.env
+	LAMBDA_FUNCTION_NAME=nodeapi
 	filename="prd_upload.zip"
 	rm ${dir}/../${filename}
 	echo 'Zip for PRD'

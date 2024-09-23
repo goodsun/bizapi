@@ -40,7 +40,6 @@ const tableExists = async (tableName) => {
 };
 
 const createTable = async (params) => {
-  console.dir(params);
   const command = new CreateTableCommand(params);
   try {
     await client.send(command);
@@ -50,8 +49,6 @@ const createTable = async (params) => {
 };
 
 const putItem = async (params) => {
-  console.log("PUT ITEM TEST ==========");
-  console.dir(params);
   try {
     await client.send(new PutItemCommand(params));
   } catch (err) {
@@ -85,7 +82,6 @@ const deleteItem = async (params) => {
 };
 
 const query = async (params) => {
-  console.dir(params);
   try {
     const result = await client.send(new QueryCommand(params));
     return getUnmarshallItems(result);
@@ -95,7 +91,6 @@ const query = async (params) => {
 };
 
 const scan = async (params) => {
-  console.dir(params);
   try {
     const result = await client.send(new ScanCommand(params));
     return result;
