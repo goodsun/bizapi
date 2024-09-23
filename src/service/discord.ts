@@ -154,11 +154,11 @@ const getDisplayData = async () => {
   return result;
 };
 
-const sendMessage = async () => {
+const sendMessage = async (message, channel_id) => {
   const url =
     "https://discord.com/api/v10/channels/" + channel_id + "/messages";
   const body = {
-    content: "これはAPIから送信されたメッセージです。",
+    content: message,
   };
   const result = await sendApi(url, "post", body);
   return result;

@@ -14,6 +14,12 @@ const discordList = async () => {
   return result;
 };
 
+const discordMessage = async (message, channel_id) => {
+  const result = await discordService.sendMessage(message, channel_id);
+  console.log("Discord test:" + result);
+  return result;
+};
+
 const shopList = async () => {
   const result = await shopModel.getItems();
   return result;
@@ -65,6 +71,7 @@ const dynamoUpdate = async () => {
 
 const controller = {
   discordList,
+  discordMessage,
   dynamoList,
   notionList,
   itemList,

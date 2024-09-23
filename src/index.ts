@@ -45,6 +45,12 @@ app.get("/", async (_, res) => {
   res.send(result);
 });
 
+app.get("/message", async (_, res) => {
+  const result = "<h1>hello discord</h1>";
+  controller.discordMessage("hello discord", CONST.DISCORD_CHANNEL_ID);
+  res.send(result);
+});
+
 app.get("/discord", async (_, res) => {
   const result = "<h1>discordList</h1>";
   const list = await controller.discordList();
@@ -364,6 +370,18 @@ app.get("/killMember/:id", async (req, res) => {
   res.send({ message: "削除しました" });
 });
 
+app.get("/sendMember/:id", async (req, res) => {
+  const message = "sendMessage for member";
+  await controller.sqsSend({
+    function: "discord-direct-message",
+    params: {
+      message: message,
+      userId: req.params.id,
+    },
+  });
+  res.send({ message: message });
+});
+
 app.post("/transrequest", async (req, res) => {
   let body = req.body;
   const hashInfo = await utils.getShortHash(body.ca + "/" + body.id);
@@ -462,96 +480,84 @@ app.post(
         });
       }
       if (message.data.name === "regist") {
+        let sendMessage = "";
         const member = await discordConnect.memberInfo(message.member.user.id);
         const eoa = message.data.options[0].value;
         const exist = await memberModel.getMemberByEoa(eoa);
-        console.dir(exist);
-        console.dir(member);
-        if (
-          exist.DiscordId != undefined &&
-          member.DiscordId != exist.DiscordId
-        ) {
-          res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              content:
-                "EOA:" +
-                eoa +
-                "\nこちらのEOAは既に " +
-                exist.Name +
-                " のウォレットとして登録されています。 \n" +
-                "\nウォレットを変更したい場合は以下のURLにアクセスし、\n" +
-                eoa +
-                "の接続解除を行なってください。\n" +
-                "\nURL : " +
-                CONST.PROVIDER_URL +
-                "/disconnect/",
-              flags: 64,
-            },
-          });
-        }
-        memberModel.memberUpdate(member);
-        if (member.DiscordId == exist.DiscordId) {
-          res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              content: "メンバー情報をアップデートしました。 \n EOA:" + eoa,
-              flags: 64,
-            },
-          });
-        }
         const isEOA = await getDonate.isEOA(eoa);
-        const secret = utils.generateRandomString(12);
-        await memberModel.memberSetSecret(
-          message.member.user.id,
-          message.data.options[0].value,
-          secret,
-          message.member.roles
-        );
+        if (member.DiscordId == exist.DiscordId) {
+          memberModel.memberUpdate(member);
+          sendMessage = "メンバー情報をアップデートしました。 \n EOA:" + eoa;
+          console.log(sendMessage);
+        } else if (exist.DiscordId != undefined) {
+          sendMessage =
+            "EOA:" +
+            eoa +
+            "\nこちらのEOAは既に " +
+            exist.Name +
+            " のウォレットとして登録されています。 \n" +
+            "\nウォレットを変更したい場合は以下のURLにアクセスし、\n" +
+            eoa +
+            "の接続解除を行なってください。\n" +
+            "\nURL : " +
+            CONST.PROVIDER_URL +
+            "/disconnect/";
+          console.log(sendMessage);
+        } else if (isEOA) {
+          const secret = utils.generateRandomString(12);
+          await memberModel.memberSetSecret(
+            message.member.user.id,
+            message.data.options[0].value,
+            secret,
+            message.member.roles
+          );
 
-        if (isEOA) {
           const balance = await getDonate.getBalance(eoa);
           let donateBalance = await getDonate.getDonate("balance", eoa);
           if (donateBalance == undefined) {
             donateBalance = "0";
           }
-          res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              content:
-                message.member.user.global_name +
-                "のアカウントを以下のウォレットアドレスに紐づけます \n EOA:" +
-                eoa +
-                "\n" +
-                balance +
-                " POL\n" +
-                donateBalance +
-                " donatePoint\n" +
-                "\n<ご注意>:" +
-                "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
-                "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
-                "\n" +
-                "\n以下のURLにアクセスし、ウォレットを接続して登録を完了してください。" +
-                "\nURL : " +
-                CONST.PROVIDER_URL +
-                "/regist/" +
-                message.member.user.id +
-                "/" +
-                secret +
-                "\n SECRET : " +
-                secret,
-              flags: 64,
-            },
-          });
+          sendMessage =
+            message.member.user.global_name +
+            "のアカウントを以下のウォレットアドレスに紐づけます \n EOA:" +
+            eoa +
+            "\n" +
+            balance +
+            " POL\n" +
+            donateBalance +
+            " donatePoint\n" +
+            "\n<ご注意>:" +
+            "\n登録されたウォレットアドレスに入っているトークンによりロールが付与されます。" +
+            "\nウォレットアドレスを変更すると別の人とみなされますのでご注意ください" +
+            "\n" +
+            "\n以下のURLにアクセスし、ウォレットを接続して登録を完了してください。" +
+            "\nURL : " +
+            CONST.PROVIDER_URL +
+            "/regist/" +
+            message.member.user.id +
+            "/" +
+            secret +
+            "\n SECRET : " +
+            secret;
         } else {
-          res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              content: "こちらのアドレスはEOAではありません。 \n EOA:" + eoa,
-              flags: 64,
-            },
-          });
+          sendMessage = "こちらのアドレスはEOAではありません。 \n EOA:" + eoa;
         }
+
+        await controller.sqsSend({
+          function: "discord-message",
+          params: {
+            message: sendMessage,
+            channelId: CONST.DISCORD_CHANNEL_ID,
+          },
+        });
+
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: "Regist機能を実行しました。",
+            flags: 64,
+          },
+        });
       }
 
       if (message.data.name === "member-sbt") {
