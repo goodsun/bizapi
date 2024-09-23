@@ -463,8 +463,44 @@ app.post(
       }
       if (message.data.name === "regist") {
         const member = await discordConnect.memberInfo(message.member.user.id);
+        const eoa = message.data.options[0].value;
+        const exist = await memberModel.getMemberByEoa(eoa);
+        console.dir(exist);
+        console.dir(member);
+        if (
+          exist.DiscordId != undefined &&
+          member.DiscordId != exist.DiscordId
+        ) {
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content:
+                "EOA:" +
+                eoa +
+                "\nこちらのEOAは既に " +
+                exist.Name +
+                " のウォレットとして登録されています。 \n" +
+                "\nウォレットを変更したい場合は以下のURLにアクセスし、\n" +
+                eoa +
+                "の接続解除を行なってください。\n" +
+                "\nURL : " +
+                CONST.PROVIDER_URL +
+                "/disconnect/",
+              flags: 64,
+            },
+          });
+        }
         memberModel.memberUpdate(member);
-
+        if (member.DiscordId == exist.DiscordId) {
+          res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: "メンバー情報をアップデートしました。 \n EOA:" + eoa,
+              flags: 64,
+            },
+          });
+        }
+        const isEOA = await getDonate.isEOA(eoa);
         const secret = utils.generateRandomString(12);
         await memberModel.memberSetSecret(
           message.member.user.id,
@@ -472,8 +508,7 @@ app.post(
           secret,
           message.member.roles
         );
-        const eoa = message.data.options[0].value;
-        const isEOA = await getDonate.isEOA(eoa);
+
         if (isEOA) {
           const balance = await getDonate.getBalance(eoa);
           let donateBalance = await getDonate.getDonate("balance", eoa);
