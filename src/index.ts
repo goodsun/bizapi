@@ -546,7 +546,7 @@ app.post(
         await controller.sqsSend({
           function: "discord-direct-message",
           params: {
-            message: message,
+            message: sendMessage,
             userId: message.member.user.id,
           },
         });
