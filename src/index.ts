@@ -452,33 +452,22 @@ app.post(
 
       //=============================================================
       if (message.data.name === "gm") {
-        discordConnect.setRoleId(message.member.user.id, "Supporter");
+        await controller.sqsSend({
+          function: "discord-message",
+          params: {
+            message: `${message.member.user.global_name}さんGM!`,
+            channelId: message.channel_id,
+          },
+        });
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content: `${message.member.user.global_name}さんGM!\n挨拶のできるあなたをSUPPORTERに任命します!`,
+            content: "GM!",
             flags: 64,
           },
         });
       }
 
-      if (message.data.name === "work") {
-        res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            content:
-              message.member.user.global_name +
-              "\n USERID:" +
-              message.member.user.id +
-              "\n command:" +
-              message.data.name +
-              "\n value :" +
-              JSON.stringify(message.data.options) +
-              "\n",
-            flags: 64,
-          },
-        });
-      }
       if (message.data.name === "regist") {
         let sendMessage = "";
         const member = await discordConnect.memberInfo(message.member.user.id);
@@ -488,7 +477,6 @@ app.post(
         if (member.DiscordId == exist.DiscordId) {
           memberModel.memberUpdate(member);
           sendMessage = "メンバー情報をアップデートしました。 \n EOA:" + eoa;
-          console.log(sendMessage);
         } else if (exist.DiscordId != undefined) {
           sendMessage =
             "EOA:" +
@@ -502,7 +490,6 @@ app.post(
             "\nURL : " +
             CONST.PROVIDER_URL +
             "/disconnect/";
-          console.log(sendMessage);
         } else if (isEOA) {
           const secret = utils.generateRandomString(12);
           await memberModel.memberSetSecret(
@@ -543,6 +530,7 @@ app.post(
           sendMessage = "こちらのアドレスはEOAではありません。 \n EOA:" + eoa;
         }
 
+        /*
         await controller.sqsSend({
           function: "discord-direct-message",
           params: {
@@ -550,11 +538,12 @@ app.post(
             userId: message.member.user.id,
           },
         });
+        */
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content: "Registを受付しました。BizBotより返信いたします。",
+            content: sendMessage,
             flags: 64,
           },
         });
@@ -579,23 +568,36 @@ app.post(
           message.member.roles
         );
 
+        const sendMes =
+          "会員証SBT発行はこちらから \n EOA : " +
+          eoa +
+          "\n\n以下のURLにアクセスしウォレットを接続して会員証を発行してください。" +
+          "\nURL: " +
+          CONST.PROVIDER_URL +
+          "/membersbt/" +
+          message.member.user.id +
+          "/" +
+          secret;
+
+        /*
+        await controller.sqsSend({
+          function: "discord-direct-message",
+          params: {
+            message: sendMes,
+            userId: message.member.user.id,
+          },
+        });
+        */
+
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content:
-              "会員証SBT発行はこちらから \n EOA : " +
-              eoa +
-              "\n\n以下のURLにアクセスしウォレットを接続して会員証を発行してください。" +
-              "\nURL: " +
-              CONST.PROVIDER_URL +
-              "/membersbt/" +
-              message.member.user.id +
-              "/" +
-              secret,
+            content: sendMes,
             flags: 64,
           },
         });
       }
+
       if (message.data.name === "editor") {
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const secret = utils.generateRandomString(12);
@@ -606,19 +608,30 @@ app.post(
           message.member.roles
         );
 
+        const sendMes =
+          "記事の執筆はこちらから \n EOA : " +
+          eoa +
+          "\n\n以下のURLにアクセスしウォレットを接続してログインしてください。" +
+          "\nURL: " +
+          CONST.PROVIDER_URL +
+          "/editor/" +
+          message.member.user.id +
+          "/" +
+          secret;
+        /*
+        await controller.sqsSend({
+          function: "discord-direct-message",
+          params: {
+            message: sendMes,
+            userId: message.member.user.id,
+          },
+        });
+        */
+
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content:
-              "記事の執筆はこちらから \n EOA : " +
-              eoa +
-              "\n\n以下のURLにアクセスしウォレットを接続してログインしてください。" +
-              "\nURL: " +
-              CONST.PROVIDER_URL +
-              "/editor/" +
-              message.member.user.id +
-              "/" +
-              secret,
+            content: sendMes,
             flags: 64,
           },
         });
