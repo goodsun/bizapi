@@ -7,6 +7,7 @@
   "scripts": {
     "local": "sh ./deploy/build.sh local && exit 1",
     "test": "sh ./deploy/build.sh test && exit 1",
+    "flow": "sh ./deploy/build.sh flow && exit 1",
     "stg": "sh ./deploy/build.sh stg && exit 1",
     "prd": "sh ./deploy/build.sh prd && exit 1"
   },

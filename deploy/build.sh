@@ -11,6 +11,12 @@ if [ $1 = 'stg' ]; then
 	filename="stg_upload.zip"
 	rm ${dir}/../${filename}
 	echo 'Zip for STG'
+elif [ $1 = 'flow' ]; then
+	cp flow.env ../dist/.env
+	LAMBDA_FUNCTION_NAME=flow-api
+	filename="flow_upload.zip"
+	rm ${dir}/../${filename}
+	echo 'Zip for FLOW'
 elif [ $1 = 'prd' ]; then
 	cp prd.env ../dist/.env
 	LAMBDA_FUNCTION_NAME=nodeapi
