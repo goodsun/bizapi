@@ -45,6 +45,21 @@ app.get("/", async (_, res) => {
   res.send(result);
 });
 
+app.get("/init", async (_, res) => {
+  const result = "<h1>BIZBOT API ver." + CONST.VERSION + " init</h1>";
+  const member = await controller.memberList();
+  const shop = await controller.shopList();
+  const item = await controller.itemList();
+  const content = await contentModel.getItems("count");
+  res.send({
+    message: result,
+    member: member,
+    shop: shop,
+    item: item,
+    content: content,
+  });
+});
+
 app.get("/dynamosync", async (_, res) => {
   if (CONST.API_ENV != "PRD") {
     await controller.sqsSend({
