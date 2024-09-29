@@ -5,7 +5,6 @@ import controller from "./controller/controller.js";
 import ethController from "./controller/etherium.js";
 import getDonate from "./connect/getDonate.js";
 import getOwn from "./connect/getOwn.js";
-import constConnect from "./connect/const.js";
 import contentsConnect from "./connect/contents.js";
 import discordConnect from "./connect/discord.js";
 import memberModel from "./model/members.js";
@@ -41,7 +40,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 app.get("/", async (_, res) => {
-  const result = "<h1>BIZBOT API ver." + CONST.VERSION + "</h1>";
+  const result = "<h1>" + CONST.API_NAME + " ver." + CONST.VERSION + "</h1>";
   res.send(result);
 });
 
@@ -51,6 +50,13 @@ app.get("/init", async (_, res) => {
   const shop = await controller.shopList();
   const item = await controller.itemList();
   const content = await contentModel.getItems("count");
+  await controller.sqsSend({
+    function: "discord-direct-message",
+    params: {
+      message: "initialized dynamo setup",
+      userId: CONST.DISCORD_ADMIN_USER_ID,
+    },
+  });
   res.send({
     message: result,
     member: member,
@@ -60,28 +66,7 @@ app.get("/init", async (_, res) => {
   });
 });
 
-app.get("/dynamosync", async (_, res) => {
-  if (CONST.API_ENV != "PRD") {
-    await controller.sqsSend({
-      function: "dynamo-sync",
-      params: {
-        user_id: "1142658556609450065",
-        user_name: "administrator",
-      },
-    });
-    res.send({ message: CONST.API_ENV + "更新します" });
-  }
-  res.send({ message: CONST.API_ENV + "PRD利用不可" });
-});
-
-app.get("/dynamosync/create", async (_, res) => {
-  if (CONST.API_ENV != "PRD") {
-    res.send({ message: CONST.API_ENV + "更新できません" });
-  }
-  res.send({ message: CONST.API_ENV + "PRD利用不可" });
-});
-
-app.get("/membersync/", async (_, res) => {
+app.get("/membersync", async (_, res) => {
   if (CONST.API_ENV != "PRD") {
     const masterTarget = CONST.DYNAMO_TABLE_PREFIX_MASTER + "_member";
     const replicaTarget = CONST.DYNAMO_TABLE_PREFIX + "_member";
@@ -113,27 +98,10 @@ app.get("/message", async (_, res) => {
   res.send(result);
 });
 
-app.get("/discord", async (_, res) => {
-  const result = "<h1>discordList</h1>";
-  const list = await controller.discordList();
-  res.send(result + list);
-});
-
 app.get("/notion", async (_, res) => {
   const result = "<h1>notionList</h1>";
   const list = await controller.notionList();
   res.send(result + list);
-});
-
-app.get("/item", async (_, res) => {
-  const list = await controller.itemList();
-  res.send(list);
-});
-
-app.get("/item/add/:id/:ca/:num", async (req, res) => {
-  await itemModel.createItem(req.params);
-  const list = await controller.itemList();
-  res.send(list);
 });
 
 app.get("/shop", async (_, res) => {
@@ -214,28 +182,6 @@ app.post("/item/update/:id", async (req, res) => {
   res.send(result);
 });
 
-app.get("/ownlist/:eoa", async (req, res) => {
-  const ownlist = await getOwn.getOwnByEoa(req.params.eoa);
-  let responseMes = "";
-  if (ownlist.nftList.length > 0) {
-    responseMes += "NFT LIST\n";
-    for (let key in ownlist.nftList) {
-      responseMes +=
-        ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
-    }
-  }
-
-  if (ownlist.nftList.length > 0) {
-    responseMes += "SBT LIST\n";
-    for (let key in ownlist.nftList) {
-      responseMes +=
-        ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
-    }
-  }
-
-  res.send({ message: responseMes, list: ownlist });
-});
-
 app.get("/member", async (_, res) => {
   const result = "<h1>memberList</h1>";
   const list = await controller.memberList();
@@ -247,20 +193,9 @@ app.get("/member/:eoa", async (req, res) => {
   res.send(detail);
 });
 
-app.get("/discord/:id", async (req, res) => {
-  const detail = await memberModel.discordId2eoa(req.params.id);
-  res.send(detail);
-});
-
 app.get("/dynamo", async (_, res) => {
   const result = "<h1>dynamoList</h1>";
   const list = await controller.dynamoList();
-  res.send(result + list);
-});
-
-app.get("/eoalist", async (_, res) => {
-  const result = "<h1>eoaList</h1>";
-  const list = await controller.eoaList();
   res.send(result + list);
 });
 
@@ -268,6 +203,26 @@ app.get("/dynamo/member/:id", async (req, res) => {
   const result = "<h1>dynamoList</h1>";
   const detail = await memberModel.getDisplayMember(req);
   res.send(result + detail);
+});
+
+app.get("/dynamosync", async (_, res) => {
+  if (CONST.API_ENV != "PRD") {
+    await controller.sqsSend({
+      function: "dynamo-sync",
+      params: {
+        user_id: "1142658556609450065",
+        user_name: "administrator",
+      },
+    });
+    res.send({ message: CONST.API_ENV + "更新します" });
+  }
+  res.send({ message: CONST.API_ENV + "PRD利用不可" });
+});
+
+app.get("/eoalist", async (_, res) => {
+  const result = "<h1>eoaList</h1>";
+  const list = await controller.eoaList();
+  res.send(result + list);
 });
 
 app.get("/metadata/member/:id", async (req, res) => {
@@ -324,7 +279,7 @@ app.post("/disconnect", async (req, res) => {
   res.send(result);
 });
 
-app.get("/tba/:cid/:rca/:aca/:ca/:id/:salt", async (req, res) => {
+app.get("/tba/:rca/:aca/:chainId/:ca/:id/:salt", async (req, res) => {
   const detail = await ethController.getTbaInfo(req);
   res.send(detail);
 });
@@ -336,6 +291,26 @@ app.get("/own/:eoa/:ca", async (req, res) => {
     result += list[key].tokenURI + "<br />";
   }
   res.send(result);
+});
+
+app.get("/ownlist/:eoa", async (req, res) => {
+  const ownlist = await getOwn.getOwnByEoa(req.params.eoa);
+  let responseMes = "";
+  if (ownlist.nftList.length > 0) {
+    responseMes += "NFT LIST\n";
+    for (let key in ownlist.nftList) {
+      responseMes +=
+        ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
+    }
+  }
+  if (ownlist.nftList.length > 0) {
+    responseMes += "SBT LIST\n";
+    for (let key in ownlist.nftList) {
+      responseMes +=
+        ownlist.nftList[key][0] + ":" + ownlist.nftList[key][1] + " tokens\n";
+    }
+  }
+  res.send({ message: responseMes, list: ownlist });
 });
 
 app.get("/contents", async (req, res) => {
@@ -414,38 +389,15 @@ app.get("/contents/get/:id", async (req, res) => {
   res.send(detail);
 });
 
-app.get("/genre", async (req, res) => {
-  const detail = await constConnect.getGenre();
+app.get("/discord", async (_, res) => {
+  const result = "<h1>discordList</h1>";
+  const list = await controller.discordList();
+  res.send(result + list);
+});
+
+app.get("/discord/:id", async (req, res) => {
+  const detail = await memberModel.discordId2eoa(req.params.id);
   res.send(detail);
-});
-
-app.get("/type", async (req, res) => {
-  const detail = await constConnect.getType();
-  res.send(detail);
-});
-
-app.get("/discordMember/:id", async (req, res) => {
-  const member = await discordConnect.memberInfo(req.params.id);
-  memberModel.memberUpdate(member);
-  const role = await discordConnect.setRoleId(req.params.id, "Holder &Fan");
-  res.send({ member: member, role: role });
-});
-
-app.get("/killMember/:id", async (req, res) => {
-  memberModel.memberDelete(req.params.id);
-  res.send({ message: "削除しました" });
-});
-
-app.get("/sendMember/:id", async (req, res) => {
-  const message = "sendMessage for member";
-  await controller.sqsSend({
-    function: "discord-direct-message",
-    params: {
-      message: message,
-      userId: req.params.id,
-    },
-  });
-  res.send({ message: message });
 });
 
 app.get("/sendMember/:id/:mes", async (req, res) => {
@@ -460,6 +412,9 @@ app.get("/sendMember/:id/:mes", async (req, res) => {
   res.send({ message: message + req.params.mes + " to " + req.params.id });
 });
 
+/*
+  ユーザーの購入アクション 作家への転送リクエスト
+*/
 app.post("/transrequest", async (req, res) => {
   let body = req.body;
   const hashInfo = await utils.getShortHash(body.ca + "/" + body.id);
@@ -706,6 +661,7 @@ app.post(
       }
 
       if (message.data.name === "apply") {
+        console.log("apply");
         const eoa = await memberModel.discordId2eoa(message.member.user.id);
         const ownlist = await getOwn.getOwnByEoa(eoa);
         let responseMes = "";
@@ -747,6 +703,14 @@ app.post(
         } else {
           responseMes = "あなたは有効なNFTを持っていません";
         }
+
+        await controller.sqsSend({
+          function: "discord-direct-message",
+          params: {
+            message: responseMes,
+            userId: message.member.user.id,
+          },
+        });
 
         res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,

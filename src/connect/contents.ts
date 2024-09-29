@@ -1,5 +1,4 @@
 import { CONST } from "../common/const.js";
-import constConnect from "./const.js";
 import contentModel from "../model/content.js";
 
 function replaceMarkdownLinks(baseUrl, markdown) {

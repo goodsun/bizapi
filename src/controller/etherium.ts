@@ -22,13 +22,13 @@ const getManager = async (res) => {
 };
 
 const getTbaInfo = async (res) => {
-  const cid = res.params.cid;
   const regca = res.params.rca;
   const accca = res.params.aca;
+  const chainId = res.params.cid;
   const ca = res.params.ca;
   const id = res.params.id;
   const salt = res.params.salt;
-  const result = await getTba(regca, accca, cid, ca, id, salt);
+  const result = await getTba(regca, accca, chainId, ca, id, salt);
   return result;
 };
 

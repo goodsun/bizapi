@@ -6,27 +6,27 @@ rm -r ../dist
 mkdir ../dist
 
 if [ $1 = 'stg' ]; then
-	cp stg.env ../dist/.env
+	cp api_stg.env ../dist/.env
 	LAMBDA_FUNCTION_NAME=stg_api
 	filename="stg_upload.zip"
 	rm ${dir}/../${filename}
 	echo 'Zip for STG'
 elif [ $1 = 'flow' ]; then
-	cp flow.env ../dist/.env
+	cp api_flow.env ../dist/.env
 	LAMBDA_FUNCTION_NAME=flow-api
 	filename="flow_upload.zip"
 	rm ${dir}/../${filename}
 	echo 'Zip for FLOW'
 elif [ $1 = 'prd' ]; then
-	cp prd.env ../dist/.env
+	cp api_prd.env ../dist/.env
 	LAMBDA_FUNCTION_NAME=nodeapi
 	filename="prd_upload.zip"
 	rm ${dir}/../${filename}
 	echo 'Zip for PRD'
 elif [ $1 = 'local' ]; then
-	cp local.env ../dist/.env
+	cp api_local.env ../dist/.env
 elif [ $1 = 'test' ]; then
-	cp local.env ../dist/.env
+	cp api_local.env ../dist/.env
 else
 	echo 'input error'
 	exit

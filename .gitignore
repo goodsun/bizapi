@@ -131,10 +131,5 @@ dist
 
 # uploadfile
 *.zip
-prd.env
-stg.env
-flow.env
-polygonChain.env
-privateChain.env
-local.env
+api_*.env
 customSettings.ts

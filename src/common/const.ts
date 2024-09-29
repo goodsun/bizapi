@@ -3,6 +3,7 @@ dotenv.config();
 
 export const CONST = {
   API_ENV: process.env.API_ENV,
+  API_NAME: process.env.API_NAME,
   API_URL: process.env.API_URL,
   VERSION: process.env.VERSION,
   PROVIDER_URL: process.env.PROVIDER_URL,
@@ -24,6 +25,7 @@ export const CONST = {
   DYNAMO_TABLE_PREFIX_MASTER: process.env.DYNAMO_TABLE_PREFIX_MASTER,
 
   DISCORD_CHANNEL_ID: process.env.DISCORD_CHANNEL_ID,
+  DISCORD_ADMIN_USER_ID: process.env.DISCORD_ADMIN_USER_ID,
 
   RPC_URL: process.env.RPC_URL,
   MANAGER_CA: process.env.MANAGER_CA,
