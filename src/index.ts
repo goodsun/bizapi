@@ -480,6 +480,12 @@ app.post(
   verifyKeyMiddleware(CONST.DISCORD_PUB_KEY),
   async (req, res) => {
     const message = req.body;
+
+    // pingに対する返答
+    if (message === 1) {
+      return res.send({ type: 1 });
+    }
+
     if (message.type === InteractionType.APPLICATION_COMMAND) {
       console.log("slash command request" + JSON.stringify(message));
 
