@@ -524,7 +524,9 @@ app.post(
             "こちらのEOAは " + exist.Name + " に利用されています \n EOA:" + eoa;
         } else if (
           exist.message == "member not found" &&
-          (nowMember == undefined || nowMember.Eoa == undefined)
+          (nowMember == undefined ||
+            nowMember.Eoa == undefined ||
+            nowMember.Eoa == "")
         ) {
           memberModel.memberUpdate(member);
           const secret = utils.generateRandomString(12);
