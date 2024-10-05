@@ -51,7 +51,7 @@ if [ $1 = 'local' ]; then
 elif [ $1 = 'test' ]; then
 	NODE_ENV=develop node develop.js
 else
-	zip -r ${dir}/../${filename} ./*
+	zip -rq ${dir}/../${filename} ./*
 	zip ${dir}/../${filename} .env
 	zip --delete ${dir}/../${filename} develop.js
 	zip --delete ${dir}/../${filename} test/*
