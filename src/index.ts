@@ -419,26 +419,26 @@ app.post("/transrequest", async (req, res) => {
   let body = req.body;
   const hashInfo = await utils.getShortHash(body.ca + "/" + body.id);
   if (hashInfo.shortHash == body.secret) {
-    const ownerDiscord = await memberModel.getMemberByEoa(body.eoa);
-    const creatorDiscord = await memberModel.getMemberByEoa(hashInfo.creator);
-    let OwnerID = body.eoa;
-    let CreatorID = hashInfo.creator;
+    const buyerDiscord = await memberModel.getMemberByEoa(body.eoa);
+    const ownerDiscord = await memberModel.getMemberByEoa(hashInfo.owner);
+    let BuyerId = body.eoa;
+    let OwnerId = hashInfo.owner;
     let ChannelId = CONST.DISCORD_CHANNEL_ID;
 
-    if (ownerDiscord.DiscordId) {
-      OwnerID = "<@" + ownerDiscord.DiscordId + ">";
+    if (buyerDiscord.DiscordId) {
+      BuyerId = "<@" + buyerDiscord.DiscordId + ">";
     }
-    if (creatorDiscord.DiscordId) {
-      CreatorID = "<@" + creatorDiscord.DiscordId + ">";
+    if (ownerDiscord.DiscordId) {
+      OwnerId = "<@" + ownerDiscord.DiscordId + ">";
     }
     if (hashInfo.channelId) {
       ChannelId = hashInfo.channelId;
     }
 
     const message =
-      CreatorID +
+      OwnerId +
       " さん。\n" +
-      OwnerID +
+      BuyerId +
       " さんのNFT購入[ " +
       hashInfo.name +
       " ]が認証されました。\n以下のURLよりこちらのNFTを\n" +
@@ -780,7 +780,7 @@ app.post(
               content:
                 "secretkey : " +
                 hashInfo.shortHash +
-                "\nCreator : " +
+                "\ngallaryName : " +
                 hashInfo.gallaryName +
                 "\nNFT contract : " +
                 hashInfo.contractInfo +

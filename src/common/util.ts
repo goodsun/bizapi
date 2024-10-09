@@ -57,7 +57,7 @@ const getShortHash = async (tokenCaId) => {
     const tokenInfo = await getToken(info[0], "tokenURI", info[1]);
     const owner = await getToken(info[0], "ownerOf", info[1]);
     const contractName = await getToken(info[0], "name", null);
-    const gallary = await shopModel.getItemByEoa(caInfo[0]);
+    const gallary = await shopModel.getItemByEoa(owner);
     const bytes = CryptoJS.AES.decrypt(
       gallary.Seed,
       process.env.AES_SECRET_KEY
