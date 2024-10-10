@@ -424,9 +424,11 @@ app.post("/transrequest", async (req, res) => {
     let BuyerId = body.eoa;
     let OwnerId = hashInfo.owner;
     let ChannelId = CONST.DISCORD_CHANNEL_ID;
+    let messageSend = false;
 
     if (buyerDiscord.DiscordId) {
       BuyerId = "<@" + buyerDiscord.DiscordId + ">";
+      messageSend = true;
     }
     if (ownerDiscord.DiscordId) {
       OwnerId = "<@" + ownerDiscord.DiscordId + ">";
@@ -460,8 +462,26 @@ app.post("/transrequest", async (req, res) => {
       },
     });
 
+    if (messageSend) {
+      await controller.sqsSend({
+        function: "discord-direct-message",
+        params: {
+          message: message,
+          userId: buyerDiscord.DiscordId,
+        },
+      });
+    } else {
+      await controller.sqsSend({
+        function: "discord-message",
+        params: {
+          message: message,
+          channelId: CONST.DISCORD_CHANNEL_ID,
+        },
+      });
+    }
+
     res.send({
-      message: "Your request has been approved.",
+      message: "APPROVED",
       requestInfo: {
         ca: body.ca,
         id: body.id,
@@ -472,7 +492,7 @@ app.post("/transrequest", async (req, res) => {
       },
     });
   }
-  res.send({ message: body.eoa + "から不正なsecretが送信されました。" });
+  res.send({ message: "NOT_APPROVED" });
 });
 
 app.post(
