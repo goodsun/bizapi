@@ -18,6 +18,18 @@ import {
   InteractionResponseType,
 } from "discord-interactions";
 
+const roleNumbers = {
+  "": "0",
+  Admin: "1143943645205102632",
+  Engineer: "1144649703712104639",
+  member: "1206600859962834954",
+  "Holder &Fan": "1206603253580701726",
+  Potter: "1206865922950955028",
+  CommunityManager: "1206867833292722236",
+  Supporter: "1210764298280902656",
+  "Soul Binder": "1287453818853789787",
+};
+
 if (CONST.API_ENV == undefined) {
   console.log("bizenAPI SETTING ERROR");
   process.exit(1);
@@ -186,6 +198,19 @@ app.get("/member", async (_, res) => {
   const result = "<h1>memberList</h1>";
   const list = await controller.memberList();
   res.send(result + list);
+});
+
+app.get("/member/dump", async (_, res) => {
+  const response = await memberModel.getAllList();
+  const members = utils.dynamoDbToJson(response);
+  for (let key in members) {
+    let roles = members[key].Roles;
+    for (let no in roles) {
+      roles[no] = roleNumbers[roles[no]];
+    }
+    members[key].Roles = roles;
+  }
+  res.send(utils.dynamoDbToJson(response));
 });
 
 app.get("/member/:eoa", async (req, res) => {
