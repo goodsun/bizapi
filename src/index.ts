@@ -121,6 +121,12 @@ app.get("/shop", async (_, res) => {
   res.send(response);
 });
 
+app.get("/shop/dump", async (_, res) => {
+  const response = await shopModel.getAllItems();
+  const shop = utils.dynamoDbToJson(response);
+  res.send(shop);
+});
+
 app.get("/shop/id/:id", async (req, res) => {
   const response = await shopModel.getItem(req.params.id);
   res.send(response);
@@ -210,7 +216,7 @@ app.get("/member/dump", async (_, res) => {
     }
     members[key].Roles = roles;
   }
-  res.send(utils.dynamoDbToJson(response));
+  res.send(members);
 });
 
 app.get("/member/:eoa", async (req, res) => {
@@ -607,7 +613,7 @@ app.post(
             "あなたのDiscordには既に\n" +
             nowMember.Eoa +
             "が紐づいています" +
-            "\n解除するには以下にメタマスクをインストールしたブラウザでアクセスしてください。" +
+            "\n解除するには以下のURLにメタマスクをインストールしたブラウザでアクセスしてください。" +
             CONST.PROVIDER_URL +
             "/disconnect/";
         }
