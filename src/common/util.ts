@@ -111,7 +111,7 @@ const dynamoDbToJson = (dynamoData) => {
       if (valueObj.S !== undefined) {
         result[key] = valueObj.S; // String
       } else if (valueObj.N !== undefined) {
-        result[key] = Number(valueObj.N); // Number
+        result[key] = String(valueObj.N); // Number
       } else if (valueObj.BOOL !== undefined) {
         result[key] = valueObj.BOOL; // Boolean
       } else if (valueObj.M !== undefined) {
