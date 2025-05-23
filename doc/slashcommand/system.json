@@ -1,12 +1,12 @@
 {
   "name": "system",
-  "description": "システム管理用",
+  "description": "Administrator only",
   "options": [
     {
       "name": "str",
       "type": 3,
       "required": true,
-      "description": "実行にはAdminまたはManagerロールが必要です。[help|ver|info]"
+      "description": "only administrator or manager [help|ver|info]"
     }
   ]
 }
