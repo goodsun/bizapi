@@ -52,8 +52,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 app.get("/", async (_, res) => {
-  const result =
-    "<h1>OLD version | " + CONST.API_NAME + " ver." + CONST.VERSION + "</h1>";
+  const result = "<h1>" + CONST.API_NAME + " ver." + CONST.VERSION + "</h1>";
   res.send(result);
 });
 
@@ -222,7 +221,8 @@ app.get("/member/dump", async (_, res) => {
 
 app.get("/member/:eoa", async (req, res) => {
   const detail = await memberModel.getMemberByEoa(req.params.eoa);
-  res.send(detail);
+  res.setHeader("Content-Type", "application/json");
+  res.send(utils.safeJsonStringify(detail));
 });
 
 app.get("/dynamo", async (_, res) => {
@@ -302,13 +302,15 @@ app.post("/regist", async (req, res) => {
     body.eoa,
     body.secret
   );
-  res.send(result);
+  res.setHeader("Content-Type", "application/json");
+  res.send(utils.safeJsonStringify(result));
 });
 
 app.post("/disconnect", async (req, res) => {
   const body = req.body;
   const result = await memberModel.memberDisconnect(body.discordId, body.eoa);
-  res.send(result);
+  res.setHeader("Content-Type", "application/json");
+  res.send(utils.safeJsonStringify(result));
 });
 
 app.get("/tba/:rca/:aca/:chainId/:ca/:id/:salt", async (req, res) => {

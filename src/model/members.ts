@@ -61,7 +61,7 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
     const member = await getMember(id);
     const expired = utils.str2unixtime(member.Expired);
     const now = utils.str2unixtime(new Date().getTime());
-    let message = "取得後結果確認";
+    let message = "取得後結果|確認";
     let result = false;
     if (
       utils.isAddressesEqual(String(member.TmpEoa), String(eoa)) &&
@@ -82,10 +82,10 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
       } as object;
 
       await dynamoService.updateItem(params);
-      message += " 承認OK";
+      message += " 承認:OK";
       result = true;
     } else {
-      message += " 承認NG";
+      message += " 承認:NG";
     }
 
     let Role: string[] = [];
