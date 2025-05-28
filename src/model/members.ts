@@ -24,7 +24,7 @@ const memberSetSecret = async (
   const member = await getMember(id);
   let params = CRUD.update;
   params.TableName = TableName;
-  params.Key.DiscordId.N = String(member.DiscordId);
+  params.Key.DiscordId.S = String(member.DiscordId);
   params.UpdateExpression =
     "SET #Secret = :secret, #Roles = :roles,#Expired = :expired, #TmpEoa = :tmpEoa, #Updated = :updated";
   params.ExpressionAttributeValues = {
@@ -48,7 +48,7 @@ const memberSetSecret = async (
   const detail =
     "dynamo あいことば登録 " +
     id +
-    // member.DiscordId.N +
+    // member.DiscordId.S +
     " name:" +
     //member.Name.S +
     " あいことば：" +
@@ -70,7 +70,7 @@ const memberSetEoa = async (id: String, eoa: String, secret: String) => {
     ) {
       let params = CRUD.update;
       params.TableName = TableName;
-      params.Key.DiscordId.N = String(member.DiscordId);
+      params.Key.DiscordId.S = String(member.DiscordId);
       params.UpdateExpression = "SET #Eoa = :newVal, #Updated = :updated";
       params.ExpressionAttributeValues = {
         ":newVal": { S: eoa } as object,
@@ -103,7 +103,7 @@ const memberDisconnect = async (id: String, eoa: String) => {
     if (utils.isAddressesEqual(String(member.Eoa), String(eoa))) {
       let params = CRUD.delete;
       params.TableName = TableName;
-      params.Key.DiscordId.N = String(id);
+      params.Key.DiscordId.S = String(id);
       await dynamoService.deleteItem(params);
       return {
         message: "deleted eoa:" + member.Eoa + " id:" + member.DiscordId,
@@ -133,7 +133,7 @@ const getAllList = async () => {
 const getMember = async (id) => {
   let params = CRUD.read;
   params.TableName = TableName;
-  params.Key.DiscordId.N = id;
+  params.Key.DiscordId.S = id;
   return await dynamoService.getItem(params);
 };
 
@@ -223,7 +223,7 @@ const getDisplayData = async () => {
 const memberCreate = async (member) => {
   let params = CRUD.write;
   params.TableName = TableName;
-  params.Item.DiscordId.N = String(member.DiscordId);
+  params.Item.DiscordId.S = String(member.DiscordId);
   params.Item.Name.S = member.Name;
   params.Item.Username.S = member.Username;
   params.Item.Icon.S = member.Icon;
@@ -249,7 +249,7 @@ const memberUpdate = async (member) => {
   }
   let params = CRUD.update;
   params.TableName = TableName;
-  params.Key.DiscordId.N = String(member.DiscordId);
+  params.Key.DiscordId.S = String(member.DiscordId);
   params.UpdateExpression =
     "SET #Name = :Name, #Username = :Username, #Icon = :Icon, #Roles= :roles, #Updated = :updated";
   params.ExpressionAttributeNames = {
@@ -272,14 +272,14 @@ const memberUpdate = async (member) => {
 const memberDelete = async (id) => {
   let params = CRUD.delete;
   params.TableName = TableName;
-  params.Key.DiscordId.N = id;
+  params.Key.DiscordId.S = id;
   await dynamoService.deleteItem(params);
 };
 
 const memberSoftDelete = async (member) => {
   let params = CRUD.update;
   params.TableName = TableName;
-  params.Key.DiscordId.N = member.DiscordId;
+  params.Key.DiscordId.S = member.DiscordId;
   params.UpdateExpression = "SET DeleteFlag = :newVal, Updated = :updated";
   params.ExpressionAttributeValues = {
     ":newVal": { BOOL: true } as object,
@@ -295,7 +295,7 @@ const memberListUpdate = async (discordList, dynamoList) => {
   for (let key in discordList) {
     const member = discordList[key];
     const filteredItems = dynamoList.filter(
-      (item) => parseInt(item.DiscordId.N) === member.id
+      (item) => parseInt(item.DiscordId.S) === member.id
     );
     if (filteredItems.length == 0) {
       addCnt++;
@@ -322,7 +322,7 @@ const memberListUpdate = async (discordList, dynamoList) => {
     const member = dynamoList[key];
     if (member) {
       const filteredItems = discordList.filter(
-        (item) => item.id === parseInt(member.DiscordId.N)
+        (item) => item.id === parseInt(member.DiscordId.S)
       );
       if (filteredItems.length == 0) {
         delCnt++;

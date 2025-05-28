@@ -141,9 +141,9 @@ const getEoaList = async (tableName) => {
         " | name:<b>" +
         data.Name.S +
         "</b> discord:<a href='/dynamo/member/" +
-        data.DiscordId.N +
+        data.DiscordId.S +
         "'>" +
-        data.DiscordId.N +
+        data.DiscordId.S +
         "</a><br />";
     }
   }
@@ -161,7 +161,7 @@ const getDisplayData = async (tableName) => {
       " | name:<b>" +
       data.Name.S +
       "</b> Discord:" +
-      data.DiscordId.N +
+      data.DiscordId.S +
       " roles:" +
       data.Roles.SS +
       " join:" +
